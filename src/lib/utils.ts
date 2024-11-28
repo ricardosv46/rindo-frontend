@@ -12,3 +12,13 @@ export const ROLES = {
   APPROVER: 'APROBADOR',
   GLOBAL_APPROVER: 'APROBADOR GLOBAL'
 }
+
+export const downloadFile = (blob: Blob, name: string) => {
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}

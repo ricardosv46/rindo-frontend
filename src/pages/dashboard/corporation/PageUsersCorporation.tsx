@@ -1,9 +1,10 @@
-import { ROLES } from '@/lib/utils'
+import { downloadFile, ROLES } from '@/lib/utils'
 import { ModalCreateUser, ModalDeleteUser, ModalUpdateUser } from '@components/corporation'
 import { Chip, Show, Spinner } from '@components/shared'
 import { useToggle } from '@hooks/useToggle'
 import { IUser } from '@interfaces/user'
 import {
+  Button,
   Fab,
   FormControl,
   IconButton,
@@ -23,9 +24,9 @@ import {
 } from '@mui/material'
 import { getAreas } from '@services/area'
 import { getCompanies } from '@services/company'
-import { getUsers } from '@services/user'
+import { createUser, createUserByExcel, getUsers } from '@services/user'
 import { IconEdit, IconTrash } from '@tabler/icons-react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 import {
   ColumnFiltersState,
@@ -36,8 +37,9 @@ import {
   getPaginationRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { EyeIcon, Plus, SearchIcon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { CloudUploadIcon, EyeIcon, Plus, SearchIcon } from 'lucide-react'
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'react-toastify'
 
 const PageUsersCorporation = () => {
   const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
@@ -45,7 +47,11 @@ const PageUsersCorporation = () => {
   const [isOpenModalUpdate, openModalUpdate, closeModalUpdate] = useToggle()
 
   const [userSelected, setUserSelected] = useState<IUser | null>(null)
-  const { data: users = [], isLoading } = useQuery({
+  const {
+    data: users = [],
+    isLoading,
+    refetch: refetchUsers
+  } = useQuery({
     queryKey: ['getUsers'],
     queryFn: getUsers,
     retry: false,
@@ -154,8 +160,8 @@ const PageUsersCorporation = () => {
               <div className="p-2 ">
                 {areas
                   .filter((i) => info.getValue()?.includes(i?._id!))
-                  .map((i) => (
-                    <p>{i?.name}</p>
+                  .map((i, index) => (
+                    <p key={index}>{i?.name}</p>
                   ))}
               </div>
             </div>
@@ -257,6 +263,36 @@ const PageUsersCorporation = () => {
     return data
   }, [columnFilters])
 
+  const { mutate: mutateCreateByExcel, isPending: isPendingCreateUsers } = useMutation({
+    mutationFn: createUserByExcel,
+    onError: (error: string) => {
+      toast.error(error)
+    },
+    onSuccess: async ({ message, success, data }) => {
+      if (!success) {
+        downloadFile(data, 'Usuarios Fallidos.xlsx')
+        toast.error(message)
+        refetchUsers()
+      } else {
+        toast.success(message)
+        refetchUsers()
+      }
+    }
+  })
+
+  const openFileDialog = (): void => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.xls,.xlsx'
+    input.onchange = (e: Event): void => {
+      const target = e.target as HTMLInputElement
+      const files = target?.files
+      if (files && files.length > 0) {
+        mutateCreateByExcel({ file: files[0] })
+      }
+    }
+    input.click()
+  }
   return (
     <Show condition={isLoading || isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
       <div className="flex justify-between">
@@ -339,11 +375,34 @@ const PageUsersCorporation = () => {
           </FormControl>
         </div>
 
-        <Tooltip title="Crear Usuario">
-          <Fab color="primary" onClick={openModalCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
-            <Plus className="w-5 h-5" />
-          </Fab>
-        </Tooltip>
+        <div className="flex items-center gap-5">
+          {/* const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+}); */}
+
+          <Button
+            variant="contained"
+            startIcon={<CloudUploadIcon />}
+            onClick={openFileDialog}
+            disabled={isPendingCreateUsers}
+            className="relative">
+            Subir archivo
+            {/* <input accept=".xls,.xlsx" type="file" className="absolute overflow-hidden whitespace-nowrap left-0 bottom-0 h-[1px] w-[1px]" /> */}
+          </Button>
+          <Tooltip title="Crear Usuario">
+            <Fab color="primary" onClick={openModalCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
+              <Plus className="w-5 h-5" />
+            </Fab>
+          </Tooltip>
+        </div>
       </div>
       <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
         <Table className="min-w-[1600px]">

@@ -55,7 +55,8 @@ const validationSchema = yup.object().shape({
   document: yup
     .string()
     .matches(/^\d+$/, 'El documento solo puede contener números ')
-    .length(9, 'El documento debe tener 8 o 9 dígitos')
+    .min(8, 'El documento debe tener 8 o 9 dígitos')
+    .max(9, 'El documento debe tener 8 o 9 dígitos')
     .required('El documento es requerido'),
   phone: yup
     .string()

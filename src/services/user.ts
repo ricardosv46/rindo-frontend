@@ -1,5 +1,7 @@
 import { IUser, IUserRequest } from '@interfaces/user'
 import { apiService } from './axios/config'
+import { utils, write } from 'xlsx'
+import { downloadFile } from '@/lib/utils'
 
 export const getUsers = async (): Promise<IUser[]> => {
   try {
@@ -52,6 +54,35 @@ export const createUser = async (props: IUserRequest) => {
     return data
   } catch (error: any) {
     throw error?.response?.data?.message
+  }
+}
+
+export const createUserByExcel = async ({ file }: { file: File }) => {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await apiService.post('/users/create/excel', formData)
+    if (data?.success) {
+      return data
+    }
+
+    const worksheet = utils.json_to_sheet(data?.data)
+
+    const workbook = utils.book_new()
+    utils.book_append_sheet(workbook, worksheet, 'Usuarios Fallidos')
+
+    const excelBuffer = write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    })
+
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+
+    return { ...data, data: blob }
+  } catch (error: any) {
+    throw error?.response?.data?.message ?? error
   }
 }
 

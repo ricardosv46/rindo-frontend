@@ -51,7 +51,8 @@ const validationSchema = yup.object().shape({
   document: yup
     .string()
     .matches(/^\d+$/, 'El documento solo puede contener números ')
-    .length(9, 'El documento debe tener 8 o 9 dígitos')
+    .min(8, 'El documento debe tener 8 o 9 dígitos')
+    .max(9, 'El documento debe tener 8 o 9 dígitos')
     .required('El documento es requerido'),
   phone: yup
     .string()
@@ -177,6 +178,7 @@ export const FormUpdateUser = ({ onClose, companies, areas, data }: FormUpdateUs
           render={({ field }) => (
             <Select
               {...field}
+              disabled
               onChange={(e) => {
                 if (e.target.value === 'GLOBAL_APPROVER') {
                   setValue('areas', [])
@@ -208,6 +210,7 @@ export const FormUpdateUser = ({ onClose, companies, areas, data }: FormUpdateUs
             render={({ field }) => (
               <Select
                 {...field}
+                disabled={!!watch().company}
                 labelId="select-company-label"
                 id="select-company"
                 label="Empresa"
