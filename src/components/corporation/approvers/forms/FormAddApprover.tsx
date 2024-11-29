@@ -4,7 +4,7 @@ import { IUser } from '@interfaces/user'
 import { Button, Divider, FormControl, FormHelperText, InputLabel, MenuItem, Select } from '@mui/material'
 import { addApprover } from '@services/area'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import * as yup from 'yup'
@@ -44,10 +44,12 @@ export const FormAddApprover = ({ onClose, company, area, areas, users }: FormCr
     mutationFn: addApprover,
     onError: (error: string) => {
       toast.error(error)
+      onClose()
     },
     onSuccess: async ({ message }) => {
       toast.success(message)
       queryClient.invalidateQueries({ queryKey: ['getApprovers'] })
+      queryClient.invalidateQueries({ queryKey: ['getAreas'] })
       onClose()
     }
   })
@@ -56,9 +58,16 @@ export const FormAddApprover = ({ onClose, company, area, areas, users }: FormCr
     mutateAdd({ id: area, approver: values.email! })
   }
 
-  console.log({ users, company, watch: watch() })
+  const usersDisabled = useMemo(() => areas.filter((i) => i?._id === area)[0]?.approvers?.map((i) => i.approver), [areas])
 
-  const filteredUsers = useMemo(() => users.filter((i) => i.company?._id === company || i.role === 'GLOBAL_APPROVER'), [users])
+  const filteredUsers = useMemo(() => {
+    const data = users.filter((i) => {
+      console.log({ i: i.areas, area })
+      return (i.company?._id === company && i.areas?.includes(area)) || i.role === 'GLOBAL_APPROVER'
+    })
+
+    return data
+  }, [users, areas])
 
   return (
     <form
@@ -81,7 +90,7 @@ export const FormAddApprover = ({ onClose, company, area, areas, users }: FormCr
                 disablePortal: true
               }}>
               {filteredUsers.map((user) => (
-                <MenuItem key={user._id} value={user._id}>
+                <MenuItem key={user._id} value={user._id} disabled={usersDisabled?.includes(user?._id)}>
                   {user.email}
                 </MenuItem>
               ))}

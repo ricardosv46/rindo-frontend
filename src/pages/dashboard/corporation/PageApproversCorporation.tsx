@@ -1,15 +1,11 @@
-import { ROLES } from '@/lib/utils'
-import { ModalCreateUser, ModalDeleteUser, ModalUpdateUser } from '@components/corporation'
-import { ModalAddApprover } from '@components/corporation/approvers/modals/ModalAddApprover'
-import { ModalDeleteApprover } from '@components/corporation/approvers/modals/ModalDeleteApprover'
-import { Chip, Show, Spinner } from '@components/shared'
+import { columnsApprover, ModalAddApprover, ModalDeleteApprover } from '@components/corporation'
+import { Show, Spinner } from '@components/shared'
 import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
 import { IUser } from '@interfaces/user'
 import {
   Fab,
   FormControl,
-  IconButton,
   InputAdornment,
   InputLabel,
   MenuItem,
@@ -26,32 +22,34 @@ import {
 } from '@mui/material'
 import { getAreas } from '@services/area'
 import { getCompanies } from '@services/company'
-import { getApprovers, getUsers } from '@services/user'
-import { IconEdit, IconTrash } from '@tabler/icons-react'
+import { getApprovers } from '@services/user'
 import { useQuery } from '@tanstack/react-query'
 
-import {
-  ColumnFiltersState,
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  useReactTable
-} from '@tanstack/react-table'
-import { EyeIcon, Plus, SearchIcon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
+import { Plus, SearchIcon } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 const PageApproversCorporation = () => {
   const [isOpenModalAdd, openModalAdd, closeModalAdd] = useToggle()
   const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
 
-  const [dataSelected, setDataSelected] = useState<IArea | null>(null)
+  const [dataSelected, setDataSelected] = useState<IUser | null>(null)
+  const [filteredUsers, setFilteredUsers] = useState<IUser[]>([])
+  const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
+
+  const { watch, control, setValue } = useForm({
+    defaultValues: {
+      search: '',
+      company: 'all',
+      area: 'all'
+    }
+  })
 
   const {
     data: users = [],
-    isLoading,
-    isFetched: isFetchedUsers
+    isLoading: isLoadingUsers,
+    isFetching: isFetchingUsers
   } = useQuery({
     queryKey: ['getApprovers'],
     queryFn: getApprovers,
@@ -62,7 +60,7 @@ const PageApproversCorporation = () => {
   const {
     data: areas = [],
     isLoading: isLoadingAreas,
-    isFetched: isFetchedAreas
+    isFetching: isFetchingAreas
   } = useQuery({
     queryKey: ['getAreas'],
     queryFn: getAreas,
@@ -81,261 +79,142 @@ const PageApproversCorporation = () => {
     refetchOnWindowFocus: false
   })
 
-  const columnHelper = createColumnHelper<IUser>()
+  const { company, area, search } = watch()
 
-  const columns = [
-    {
-      header: 'ID',
-      id: 'index',
-      cell: (info: any) => info.row.index + 1
-    },
-    columnHelper.accessor('name', {
-      header: 'Nombre',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('lastname', {
-      header: 'Apellido',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('email', {
-      header: 'Correo',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('phone', {
-      header: 'Celular',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('document', {
-      header: 'Documento',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('company', {
-      header: 'Empresa',
-      cell: (info) => info.getValue()?.name ?? 'Todas',
-      filterFn: (row, columnId, filterValue) => {
-        if (!filterValue) return true
-        const company = row.getValue(columnId) as { _id: string }
-        return company?._id === filterValue
-      },
-      enableColumnFilter: true
-    }),
-    columnHelper.accessor('areas', {
-      header: 'Areas',
-      cell: (info) => {
-        const [isOpenAreas, openModalAreas, closeModalAreas] = useToggle()
+  useEffect(() => {
+    if (isFetchingAreas) return
+    const all = company === 'all'
+    setValue('area', 'all')
 
-        const data = info.row.original
+    const data = all ? areas : areas.filter((area) => watch().company === area?.company?._id)
+    setFilteredAreas(data)
+  }, [company, isFetchingAreas])
 
-        let name = ''
+  useEffect(() => {
+    if (isFetchingAreas && isFetchingUsers) return
 
-        if (data?.role === 'APPROVER')
-          name = info?.getValue()?.length === 1 ? areas.filter((i) => i._id === info.getValue()?.[0])[0]?.name ?? '' : ''
+    const areaUsed = areas.find((i) => i?._id === area)
+    const approvers = areaUsed?.approvers?.map((i) => i.approver)
+    const areaMatch = area === 'all'
 
-        if (data?.role === 'GLOBAL_APPROVER') name = '-'
-
-        const dropdownRef = useRef<HTMLDivElement>(null)
-
-        useEffect(() => {
-          function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-              closeModalAreas()
-            }
-          }
-
-          document.addEventListener('mousedown', handleClickOutside)
-          return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-          }
-        }, [])
-
-        return (
-          <div className="relative flex items-center gap-1" ref={dropdownRef}>
-            {name}
-            {data?.role === 'APPROVER' && name === '' && (
-              <IconButton onClick={openModalAreas}>
-                <EyeIcon className="text-primary-600" />
-              </IconButton>
-            )}
-
-            <div
-              className={`z-[9999] absolute right-0 mt-2 w-44 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 transition-all duration-300 ease-in-out transform origin-top-right ${
-                isOpenAreas ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'
-              }`}>
-              <div className="p-2 ">
-                {areas
-                  .filter((i) => info.getValue()?.includes(i?._id!))
-                  .map((i) => (
-                    <p key={i._id}>{i?.name}</p>
-                  ))}
-              </div>
-            </div>
-          </div>
-        )
-      },
-      filterFn: (row, columnId, filterValue) => {
-        if (!filterValue) return true
-        const areas = row.getValue(columnId) as string[]
-        return areas?.includes(filterValue)
-      },
-      enableColumnFilter: true
-    }),
-    columnHelper.accessor('role', {
-      header: 'Rol',
-      cell: (info) => (
-        <Chip
-          label={ROLES[info.getValue()!]}
-          color={info.getValue() === 'APPROVER' ? 'blue' : info.getValue() === 'GLOBAL_APPROVER' ? 'purple' : 'yellow'}
-        />
-      )
-    }),
-    columnHelper.accessor('verify_email', {
-      header: 'Confirmado',
-      cell: (info) => (
-        <>
-          {info.getValue() && <Chip label="Si" color="green" />}
-          {!info.getValue() && <Chip label="No" color="red" />}
-        </>
-      )
-    }),
-    {
-      header: 'Acción',
-      id: 'accion',
-      cell: (info: any) => {
-        const data = info.row.original
-
-        const handleDelete = () => {
-          setDataSelected(data)
-          openModalDelete()
-        }
-
-        return (
-          <div className="flex gap-5">
-            <IconButton onClick={handleDelete}>
-              <IconTrash className="text-primary-600" />
-            </IconButton>
-          </div>
-        )
-      }
-    }
-  ]
-
-  const handleFilterChange = (id: string, value: string) => {
-    setColumnFilters((prevFilters) => {
-      const existingFilter = prevFilters.find((filter) => filter.id === id)
-      if (existingFilter) {
-        return prevFilters.map((filter) => (filter.id === id ? { ...filter, value } : filter))
-      } else {
-        return [...prevFilters, { id, value }]
-      }
+    const newData = users.filter((user) => {
+      const globalApprover = user.role === 'GLOBAL_APPROVER'
+      const companyMatch = company === 'all' || user.company?._id === company || globalApprover
+      const userMatch = areaMatch ? true : approvers?.includes(user?._id)
+      const searchMatch =
+        user.name?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.lastname?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.email?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.phone?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.document?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.company?.name?.toLowerCase().includes(search.toLocaleLowerCase())
+      return companyMatch && userMatch && searchMatch
     })
-  }
 
-  const [globalFilter, setGlobalFilter] = useState('')
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const dataOrdered = areaMatch ? newData : newData.sort((a, b) => approvers?.indexOf(a?._id!)! - approvers?.indexOf(b?._id!)!)
 
-  const filteredAreas = useMemo(() => {
-    const selected = columnFilters.find((filter) => filter.id === 'company')?.value
-
-    const data = selected ? areas.filter((area) => selected === area?.company?._id) : areas
-    return data
-  }, [columnFilters])
-
-  const filteredUsers = useMemo(() => {
-    const arr = areas.flatMap((i) => i.approvers || []).map((i) => i?.approver)
-    return users.filter((user) => arr.includes(user?._id))
-  }, [columnFilters, isFetchedUsers, isFetchedAreas])
+    setFilteredUsers(dataOrdered)
+  }, [company, area, search, isFetchingAreas, isFetchingUsers])
 
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
     data: filteredUsers,
-    columns,
+    columns: columnsApprover(areas, setDataSelected, openModalDelete, area),
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    state: {
-      globalFilter: globalFilter,
-      columnFilters: columnFilters
-    },
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnFiltersChange: setColumnFilters
+    getPaginationRowModel: getPaginationRowModel()
   })
 
   return (
-    <Show condition={isLoading || isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
+    <Show condition={isLoadingUsers || isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
       <div className="flex justify-between">
         <div className="flex gap-5">
-          <TextField
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            size="small"
-            sx={{ pb: 3 }}
-            name="Buscar"
-            placeholder="Buscar"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                )
-              }
-            }}
+          <Controller
+            name="search"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                sx={{ pb: 3 }}
+                placeholder="Buscar"
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    )
+                  }
+                }}
+              />
+            )}
           />
 
           <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-company">Empresa</InputLabel>
-            <Select
-              labelId="select-company-label"
-              id="select-company"
-              label="Empresa"
-              value={columnFilters.find((filter) => filter.id === 'company')?.value || 'all'}
-              onChange={(e) => {
-                const companyId = e.target.value as string
-                handleFilterChange('company', companyId === 'all' ? '' : companyId)
-              }}>
-              <MenuItem value={'all'}>Todos</MenuItem>
-              {companies.map((i) => (
-                <MenuItem key={i._id} value={i._id}>
-                  {i?.name}
-                </MenuItem>
-              ))}
-            </Select>
+            <InputLabel id="select-company-label">Empresa</InputLabel>
+            <Controller
+              name="company"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  labelId="select-company-label"
+                  id="select-company"
+                  label="Empresa"
+                  defaultValue="all"
+                  MenuProps={{
+                    disablePortal: true
+                  }}>
+                  {companies.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
+                  {companies.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
+                  {companies.map((i) => (
+                    <MenuItem key={i._id} value={i._id}>
+                      {i?.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
           </FormControl>
-
           <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-company">Area</InputLabel>
-            <Select
-              labelId="select-company-label"
-              id="select-company"
-              label="Area"
-              disabled={!columnFilters.find((filter) => filter.id === 'company')?.value}
-              value={columnFilters.find((filter) => filter.id === 'areas')?.value || 'all'}
-              onChange={(e) => {
-                const areaId = e.target.value as string
-                handleFilterChange('areas', areaId === 'all' ? '' : areaId)
-              }}>
-              {filteredAreas.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
-              {filteredAreas.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
-              {filteredAreas.map((i) => (
-                <MenuItem key={i._id} value={i._id}>
-                  {i?.name}
-                </MenuItem>
-              ))}
-            </Select>
+            <InputLabel id="select-company-label">Area</InputLabel>
+            <Controller
+              name="area"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  labelId="select-company-label"
+                  id="select-company"
+                  label="Empresa"
+                  defaultValue=""
+                  disabled={company === 'all'}
+                  MenuProps={{
+                    disablePortal: true
+                  }}>
+                  {filteredAreas.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
+                  {filteredAreas.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
+                  {filteredAreas.map((i) => (
+                    <MenuItem key={i._id} value={i._id}>
+                      {i?.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
           </FormControl>
         </div>
 
         <Tooltip title="Agregar Aprobador">
-          <Fab
-            color="primary"
-            disabled={
-              !columnFilters.find((filter) => filter.id === 'company')?.value ||
-              !columnFilters.find((filter) => filter.id === 'areas')?.value
-            }
-            onClick={openModalAdd}
-            size="small"
-            sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
-            <Plus className="w-5 h-5" />
-          </Fab>
+          <span>
+            <Fab
+              color="primary"
+              disabled={area === 'all'}
+              onClick={openModalAdd}
+              size="small"
+              sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
+              <Plus className="w-5 h-5" />
+            </Fab>
+          </span>
         </Tooltip>
       </div>
       <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
@@ -380,8 +259,8 @@ const PageApproversCorporation = () => {
         {...{
           isOpen: isOpenModalAdd,
           onClose: closeModalAdd,
-          company: columnFilters.find((filter) => filter.id === 'company')?.value as string,
-          area: columnFilters.find((filter) => filter.id === 'areas')?.value as string,
+          company: watch()?.company,
+          area: watch()?.area,
           users,
           areas
         }}
@@ -391,7 +270,7 @@ const PageApproversCorporation = () => {
           isOpen: isOpenModalDelete,
           onClose: closeModalDelete,
           data: dataSelected,
-          area: columnFilters.find((filter) => filter.id === 'areas')?.value as string
+          area: watch()?.area
         }}
       />
     </Show>

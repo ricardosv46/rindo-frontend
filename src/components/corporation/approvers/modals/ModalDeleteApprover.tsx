@@ -1,10 +1,8 @@
 import { Card, Modal } from '@components/shared'
-import { IArea } from '@interfaces/area'
 import { IUser } from '@interfaces/user'
 import { Button, Divider } from '@mui/material'
 import { deleteApprover } from '@services/area'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import React from 'react'
 import { toast } from 'react-toastify'
 
 interface IModalDeleteHolding {
@@ -17,7 +15,7 @@ interface IModalDeleteHolding {
 export const ModalDeleteApprover = ({ isOpen, onClose, data, area }: IModalDeleteHolding) => {
   const queryClient = useQueryClient()
 
-  const { mutate: mutateDeleteuser, isPending } = useMutation({
+  const { mutate: mutateDeleteApprover, isPending } = useMutation({
     mutationFn: deleteApprover,
     onError: (error: string) => {
       toast.error(error)
@@ -25,12 +23,13 @@ export const ModalDeleteApprover = ({ isOpen, onClose, data, area }: IModalDelet
     onSuccess: async ({ message }) => {
       toast.success(message)
       queryClient.invalidateQueries({ queryKey: ['getApprovers'] })
+      queryClient.invalidateQueries({ queryKey: ['getAreas'] })
       onClose()
     }
   })
 
   const handleDelete = () => {
-    mutateDeleteuser({ id: area! })
+    mutateDeleteApprover({ id: area!, approver: data?._id! })
   }
 
   return (

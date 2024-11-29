@@ -12,7 +12,6 @@ const PageReportsCorporation = lazy(() => import('@pages/dashboard/corporation/P
 const PageApproversCorporation = lazy(() => import('@pages/dashboard/corporation/PageApproversCorporation'))
 const PageAreasCorporation = lazy(() => import('@pages/dashboard/corporation/PageAreasCorporation'))
 const PageCompaniesCorporation = lazy(() => import('@pages/dashboard/corporation/PageCompaniesCorporation'))
-const PageGloabalApproversCorporation = lazy(() => import('@pages/dashboard/corporation/PageGloabalApproversCorporation'))
 
 export const DashboardRouter = () => {
   const { user } = useAuth()
@@ -31,7 +30,6 @@ export const DashboardRouter = () => {
         {user?.role === 'CORPORATION' && <Route path="approvers" element={<PageApproversCorporation />} />}
         {user?.role === 'CORPORATION' && <Route path="areas" element={<PageAreasCorporation />} />}
         {user?.role === 'CORPORATION' && <Route path="companies" element={<PageCompaniesCorporation />} />}
-        {user?.role === 'CORPORATION' && <Route path="global-approvers" element={<PageGloabalApproversCorporation />} />}
 
         {/* APPROVER */}
 

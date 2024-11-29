@@ -1,10 +1,11 @@
-import { ModalDeleteCompany, ModalCreateCompany } from '@components/corporation'
+import { ModalCreateCompany, ModalDeleteCompany } from '@components/corporation'
+import { columnsCompany } from '@components/corporation/companies/table/columnsCompany'
 import { Show, Spinner } from '@components/shared'
 import { useToggle } from '@hooks/useToggle'
 import { ICompany } from '@interfaces/company'
+import { IUser } from '@interfaces/user'
 import {
   Fab,
-  IconButton,
   InputAdornment,
   Table,
   TableBody,
@@ -17,111 +18,84 @@ import {
   Tooltip
 } from '@mui/material'
 import { getCompanies } from '@services/company'
-import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  useReactTable
-} from '@tanstack/react-table'
+import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { Plus, SearchIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 const PageCompaniesCorporation = () => {
   const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
   const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
 
   const [dataSelected, setDataSelected] = useState<ICompany | null>(null)
-  const { data: companies = [], isLoading } = useQuery({
+  const [filteredCompanies, setFilteredCompanies] = useState<IUser[]>([])
+
+  const { watch, control } = useForm({
+    defaultValues: {
+      search: ''
+    }
+  })
+
+  const {
+    data: companies = [],
+    isLoading,
+    isFetching: isFetchingCompanies
+  } = useQuery({
     queryKey: ['getCompanies'],
     queryFn: getCompanies,
     retry: false,
     refetchOnWindowFocus: false
   })
 
-  const columnHelper = createColumnHelper<ICompany>()
+  const { search } = watch()
+  useEffect(() => {
+    if (isFetchingCompanies) return
 
-  const columns = [
-    {
-      header: 'ID',
-      id: 'index',
-      cell: (info: any) => info.row.index + 1
-    },
-    columnHelper.accessor('ruc', {
-      header: 'Ruc',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('name', {
-      header: 'Nombre',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('username', {
-      header: 'Usuario',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('token', {
-      header: 'Token',
-      cell: (info) => info.getValue()
-    }),
+    const newData = companies.filter((companie) => {
+      const searchMatch =
+        companie.name?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        companie.ruc?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        companie.username?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        companie.token?.toLowerCase().includes(search.toLocaleLowerCase())
 
-    {
-      header: 'Acción',
-      id: 'accion',
-      cell: (info: any) => {
-        const data = info.row.original
+      return searchMatch
+    })
 
-        const handleDelete = () => {
-          setDataSelected(data)
-          openModalDelete()
-        }
+    setFilteredCompanies(newData)
+  }, [search, isFetchingCompanies])
 
-        return (
-          <div className="flex gap-5">
-            <IconButton onClick={handleDelete}>
-              <IconTrash className="text-primary-600" />
-            </IconButton>
-          </div>
-        )
-      }
-    }
-  ]
-
-  const [globalFilter, setGlobalFilter] = useState('')
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
-    data: companies,
-    columns,
+    data: filteredCompanies,
+    columns: columnsCompany(setDataSelected, openModalDelete),
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    state: {
-      globalFilter: globalFilter
-    },
-    onGlobalFilterChange: setGlobalFilter
+    getPaginationRowModel: getPaginationRowModel()
   })
 
   return (
     <Show condition={isLoading} loadingComponent={<Spinner />}>
       <div className="flex justify-between">
-        <TextField
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          size="small"
-          sx={{ pb: 3 }}
-          name="Buscar"
-          placeholder="Buscar"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              )
-            }
-          }}
+        <Controller
+          name="search"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              size="small"
+              sx={{ pb: 3 }}
+              placeholder="Buscar"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  )
+                }
+              }}
+            />
+          )}
         />
         <Tooltip title="Crear Empresa">
           <Fab color="primary" onClick={openModalCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>

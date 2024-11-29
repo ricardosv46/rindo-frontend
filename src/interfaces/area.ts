@@ -9,7 +9,7 @@ export interface IArea {
     order?: number
     _id?: string
     approver?: string
-  }
+  }[]
   company?: ICompany
 }
 

@@ -23,8 +23,7 @@ const CORPORATION: MenuItem[] = [
   { icon: <Users className="w-4 h-4" />, label: 'Usuarios', url: '/users' },
   { icon: <Settings className="w-4 h-4" />, label: 'Aprobadores', url: '/approvers' },
   { icon: <Users className="w-4 h-4" />, label: 'Areas', url: '/areas' },
-  { icon: <Users className="w-4 h-4" />, label: 'Empresas', url: '/companies' },
-  { icon: <Users className="w-4 h-4" />, label: 'Globales', url: '/global-approvers' }
+  { icon: <Users className="w-4 h-4" />, label: 'Empresas', url: '/companies' }
 ]
 
 const SUBMITTER: MenuItem[] = [

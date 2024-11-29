@@ -86,6 +86,13 @@ export const createUserByExcel = async ({ file }: { file: File }) => {
   }
 }
 
+export const downloadTemplateUser = async () => {
+  const { data } = await apiService.get('/users/download/template', {
+    responseType: 'blob'
+  })
+  return new Blob([data])
+}
+
 export const updateUser = async ({ id, ...props }: IUserRequest) => {
   try {
     const { data } = await apiService.put(`/users/${id}/update`, props)

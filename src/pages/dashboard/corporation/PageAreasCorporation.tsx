@@ -1,16 +1,14 @@
-import { ModalCreateArea, ModalUpdateArea } from '@components/corporation'
+import { columnsArea, ModalCreateArea, ModalUpdateArea } from '@components/corporation'
 import { Show, Spinner } from '@components/shared'
 import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
 import {
   Fab,
   FormControl,
-  IconButton,
   InputAdornment,
   InputLabel,
   MenuItem,
   Select,
-  Switch,
   Table,
   TableBody,
   TableCell,
@@ -21,32 +19,32 @@ import {
   TextField,
   Tooltip
 } from '@mui/material'
-import { getAreas, updateArea } from '@services/area'
+import { getAreas } from '@services/area'
 import { getCompanies } from '@services/company'
-import { IconEdit } from '@tabler/icons-react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 
-import {
-  ColumnFiltersState,
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  useReactTable
-} from '@tanstack/react-table'
+import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { Plus, SearchIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'react-toastify'
+import { useEffect, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 const PageAreasCorporation = () => {
   const [isOpenModalUpdate, openModalUpdate, closeModalUpdate] = useToggle()
   const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
 
   const [dataSelected, setDataSelected] = useState<IArea | null>(null)
+  const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
+  const { watch, control } = useForm({
+    defaultValues: {
+      search: '',
+      company: 'all'
+    }
+  })
+
   const {
     data: areas = [],
     isLoading: isLoadingAreas,
+    isFetching: isFetchingAreas,
     refetch
   } = useQuery({
     queryKey: ['getAreas'],
@@ -62,133 +60,80 @@ const PageAreasCorporation = () => {
     refetchOnWindowFocus: false
   })
 
-  const columnHelper = createColumnHelper<IArea>()
+  const { search, company } = watch()
 
-  const columns = [
-    {
-      header: 'ID',
-      id: 'id',
-      cell: (info: any) => info.row.index + 1
-    },
-    columnHelper.accessor('name', {
-      header: 'Nombre',
-      cell: (info) => info.getValue()
-    }),
-    columnHelper.accessor('company', {
-      header: 'Empresa',
-      cell: (info) => info.getValue()?.name,
-      filterFn: (row, columnId, filterValue) => {
-        if (!filterValue) return true
-        const company = row.getValue(columnId) as { _id: string }
-        return company?._id === filterValue
-      },
-      enableColumnFilter: true
-    }),
-    columnHelper.accessor('status', {
-      header: 'Estado',
-      cell: (info) => {
-        const data = info.row.original
+  useEffect(() => {
+    if (isFetchingAreas) return
 
-        const { mutate: mutateUpdate, isPending } = useMutation({
-          mutationFn: updateArea,
-          onError: (error: string) => {
-            toast.error(error)
-          },
-          onSuccess: async ({ message }) => {
-            toast.success(message)
-            refetch()
-          }
-        })
+    const newData = areas.filter((area) => {
+      const companyMatch = company === 'all' || area.company?._id === company
+      const searchMatch =
+        area.name?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        area.company?.name?.toLowerCase().includes(search.toLocaleLowerCase())
+      return companyMatch && searchMatch
+    })
 
-        const handleUpdate = async (e: any) => {
-          mutateUpdate({ status: e.target.checked, id: data?._id })
-        }
+    setFilteredAreas(newData)
+  }, [company, search, isFetchingAreas])
 
-        return <Switch title="Cambiar estado" color="primary" disabled={isPending} checked={info.getValue()} onChange={handleUpdate} />
-      }
-    }),
-
-    {
-      header: 'Nro de aprobadores',
-      id: 'approvers',
-      cell: (info: any) => info.row.original.approvers.length
-    },
-
-    {
-      header: 'Acción',
-      id: 'accion',
-      cell: (info: any) => {
-        const data = info.row.original
-
-        const handleUpdate = () => {
-          setDataSelected(data)
-          openModalUpdate()
-        }
-
-        return (
-          <div className="flex gap-5">
-            <IconButton onClick={handleUpdate}>
-              <IconEdit className="text-primary-600" />
-            </IconButton>
-          </div>
-        )
-      }
-    }
-  ]
-
-  const [globalFilter, setGlobalFilter] = useState('')
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
-    data: areas,
-    columns,
+    data: filteredAreas,
+    columns: columnsArea(setDataSelected, openModalUpdate, refetch),
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    state: {
-      globalFilter: globalFilter,
-      columnFilters: columnFilters
-    },
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnFiltersChange: setColumnFilters
+    getPaginationRowModel: getPaginationRowModel()
   })
 
   return (
     <Show condition={isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
       <div className="flex justify-between">
         <div className="flex gap-5">
-          <TextField
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            size="small"
-            sx={{ pb: 3 }}
-            name="Buscar"
-            placeholder="Buscar"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                )
-              }
-            }}
+          <Controller
+            name="search"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                sx={{ pb: 3 }}
+                placeholder="Buscar"
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    )
+                  }
+                }}
+              />
+            )}
           />
 
           <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-company">Empresa</InputLabel>
-            <Select
-              labelId="select-company-label"
-              id="select-company"
-              label="Empresa"
-              value={columnFilters.find((filter) => filter.id === 'company')?.value || 'all'}
-              onChange={(e) => setColumnFilters([{ id: 'company', value: e.target.value === 'all' ? '' : e.target.value }])}>
-              <MenuItem value={'all'}>Todos</MenuItem>
-              {companies.map((i) => (
-                <MenuItem key={i._id} value={i._id}>
-                  {i?.name}
-                </MenuItem>
-              ))}
-            </Select>
+            <InputLabel id="select-company-label">Empresa</InputLabel>
+            <Controller
+              name="company"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  labelId="select-company-label"
+                  id="select-company"
+                  label="Empresa"
+                  defaultValue="all"
+                  MenuProps={{
+                    disablePortal: true
+                  }}>
+                  {companies.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
+                  {companies.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
+                  {companies.map((i) => (
+                    <MenuItem key={i._id} value={i._id}>
+                      {i?.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
           </FormControl>
         </div>
 
