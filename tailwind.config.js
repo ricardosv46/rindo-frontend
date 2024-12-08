@@ -30,6 +30,8 @@ export default {
         //   300: '#EF9A9A',
         //   600: '#C62828'
         // },
+        error: '#d32f2f',
+
         purple: {
           300: '#A98DCE99',
           600: '#693599'

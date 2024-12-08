@@ -22,3 +22,7 @@ export const downloadFile = (blob: Blob, name: string) => {
   a.click()
   document.body.removeChild(a)
 }
+
+export const onlyNumbers = (text: string): string => {
+  return text.replace(/\D+/g, '') // Reemplaza todo lo que no sea un dígito por una cadena vacía.
+}
