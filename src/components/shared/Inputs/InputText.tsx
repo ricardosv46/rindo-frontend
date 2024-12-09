@@ -8,9 +8,18 @@ interface InputTextProps extends Omit<TextFieldProps, 'name'> {
   errors?: FieldErrors
   maxLength?: number
   formatText?: (value: string) => string
+  formatTextLeave?: (value: string) => string
 }
 
-export const InputText: React.FC<InputTextProps> = ({ name, control, errors, maxLength, formatText, ...textFieldProps }) => {
+export const InputText: React.FC<InputTextProps> = ({
+  name,
+  control,
+  errors,
+  maxLength,
+  formatText,
+  formatTextLeave,
+  ...textFieldProps
+}) => {
   const helperText = errors?.[name]?.message as string
   return (
     <Controller
@@ -21,6 +30,7 @@ export const InputText: React.FC<InputTextProps> = ({ name, control, errors, max
           {...field}
           {...textFieldProps}
           onChange={(e) => (formatText ? field.onChange(formatText(e.target.value)) : field.onChange(e))}
+          onBlur={(e) => (formatTextLeave ? field.onChange(formatTextLeave(e.target.value)) : field.onChange(e))}
           className={`${textFieldProps.className} w-full`}
           type="text"
           color="primary"

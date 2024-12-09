@@ -9,5 +9,6 @@ export const categories = [
   { value: 'Telefonía', label: 'Telefonía' },
   { value: 'Transporte', label: 'Transporte' },
   { value: 'Viáticos', label: 'Viáticos' },
+  { value: 'Cuenta no deducible', label: 'Cuenta no deducible' },
   { value: 'Otra', label: 'Otra' }
 ]

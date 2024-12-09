@@ -17,3 +17,5 @@ export { ModalCreateUser } from './users/modals/ModalCreateUser'
 export { ModalUpdateUser } from './users/modals/ModalUpdateUser'
 export { ModalDeleteUser } from './users/modals/ModalDeleteUser'
 export { columnsUser } from './users/table/columnsUser'
+
+export { FormCreateExpense } from './expenses/forms/FormCreateExpense'

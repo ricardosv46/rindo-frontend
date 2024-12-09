@@ -27,16 +27,9 @@ const CORPORATION: MenuItem[] = [
 ]
 
 const SUBMITTER: MenuItem[] = [
-  {
-    icon: <Users className="w-4 h-4" />,
-    label: 'Rendidor',
-    url: '/bills',
-    subItems: [
-      { icon: <Users className="w-4 h-4" />, label: 'Gastos', url: '/bills' },
-      { icon: <Users className="w-4 h-4" />, label: 'Informes', url: '/reports' },
-      { icon: <Users className="w-4 h-4" />, label: 'Revision', url: '/review' }
-    ]
-  }
+  { icon: <Users className="w-4 h-4" />, label: 'Gastos', url: '/expenses' },
+  { icon: <Users className="w-4 h-4" />, label: 'Informes', url: '/reports' },
+  { icon: <Users className="w-4 h-4" />, label: 'Revision', url: '/review' }
 ]
 
 const APPROVER: MenuItem[] = [

@@ -10,6 +10,8 @@ interface ISelectProps extends Omit<SelectProps, 'name'> {
   formatText?: (value: string) => string
   data: { value: string; label: string }[]
   size?: 'small' | 'medium'
+  disabled?: boolean
+  exceptions?: string[]
 }
 
 export const InputSelect = ({
@@ -21,9 +23,13 @@ export const InputSelect = ({
   data,
   className,
   size = 'small',
+  disabled,
+  exceptions,
   ...selectProps
 }: ISelectProps) => {
   const helperText = errors?.[name]?.message as string
+
+  console.log({ disabled, exceptions })
   return (
     <FormControl sx={{ minWidth: 120 }} size={size} className={`${className} w-full`} error={!!errors?.[name]}>
       <InputLabel id={`select-${name}-label`}>{selectProps.label}</InputLabel>
@@ -40,7 +46,7 @@ export const InputSelect = ({
               disablePortal: true
             }}>
             {data.map((i, index) => (
-              <MenuItem key={index} value={i.value}>
+              <MenuItem key={index} value={i.value} disabled={disabled && !exceptions?.includes(i.value)}>
                 {i.label}
               </MenuItem>
             ))}

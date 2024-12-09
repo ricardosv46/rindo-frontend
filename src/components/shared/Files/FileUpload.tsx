@@ -1,19 +1,20 @@
 import { UploadIcon } from '@icons/UploadIcon'
+import { cn } from '@lib/utils'
 import { FormControl, FormHelperText } from '@mui/material'
 import { CircleX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { FieldErrors } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import { cn } from '../../../lib/utils'
 
 interface IFileUpload {
   name: string
+  label: string
   file?: File
   value?: string
   onFileChange: (file: File | undefined, preview: string) => void
   errors?: FieldErrors
 }
-export const FileUpload = ({ name, onFileChange, value, file, errors }: IFileUpload) => {
+export const FileUpload = ({ name, onFileChange, value, file, label, errors }: IFileUpload) => {
   const [filePreview, setFilePreview] = useState<string | undefined>(undefined)
   const helperText = errors?.[name]?.message as string
   const urlToFile = async (url: string, filename: string, mimeType: string): Promise<File> => {
@@ -41,7 +42,8 @@ export const FileUpload = ({ name, onFileChange, value, file, errors }: IFileUpl
     const extension = url.split('.').pop()?.toLowerCase()
     let mimeType = ''
     let filename = ''
-
+    {
+    }
     if (extension === 'pdf') {
       mimeType = 'application/pdf'
       filename = 'document.pdf'
@@ -114,6 +116,7 @@ export const FileUpload = ({ name, onFileChange, value, file, errors }: IFileUpl
 
   return (
     <FormControl sx={{ minWidth: 120 }} error={!!errors?.[name]}>
+      <p className={cn(!!errors?.[name] ? 'text-error' : '')}>{label}</p>
       <div
         className={cn(
           'relative flex items-center justify-center w-full px-2 pt-2 pb-2 border border-dashed rounded-sm h-[250px] ',
