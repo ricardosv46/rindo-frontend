@@ -29,7 +29,6 @@ export const InputSelect = ({
 }: ISelectProps) => {
   const helperText = errors?.[name]?.message as string
 
-  console.log({ disabled, exceptions })
   return (
     <FormControl sx={{ minWidth: 120 }} size={size} className={`${className} w-full`} error={!!errors?.[name]}>
       <InputLabel id={`select-${name}-label`}>{selectProps.label}</InputLabel>

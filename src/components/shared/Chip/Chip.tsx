@@ -17,7 +17,7 @@ export const Chip = ({ label, color, className, button, ...props }: ChipProps) =
 
   return button ? (
     <button
-      className={cn(getColor(), 'rounded-xl  flex justify-center items-center px-2 py-0.5 text-sm w-auto self-start', className)}
+      className={cn(getColor(), 'rounded-full flex justify-center items-center px-3 py-1.5 text-xs w-auto self-start', className)}
       {...props}>
       {label}
     </button>
@@ -25,7 +25,7 @@ export const Chip = ({ label, color, className, button, ...props }: ChipProps) =
     <button
       className={cn(
         getColor(),
-        ' pointer-events-none rounded-xl  flex justify-center items-center px-2 py-0.5 text-sm w-auto self-start',
+        ' pointer-events-none rounded-full  flex justify-center items-center px-3 py-1.5 text-xs w-auto self-start',
         className
       )}>
       {label}

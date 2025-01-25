@@ -1,5 +1,4 @@
-import { ICompany } from './company'
-import { typeDocuments } from '../constants/typeDocuments'
+export type StatusExpense = 'IN_REPORT' | 'APPROVED' | 'DRAFT' | 'REJECTED' | 'IN_REVISION' | ''
 
 export interface IExpense {
   id?: string
@@ -17,6 +16,7 @@ export interface IExpense {
   serie?: string
   date?: string
   typeDocument?: string
+  status?: StatusExpense
 }
 
 export interface IExpenseRequest {
@@ -55,3 +55,7 @@ export type Category =
 export type Currency = 'USD' | 'PEN' | ''
 
 export type TypeDocument = 'FACTURA ELECTRONICA' | 'BOLETA DE VENTA' | 'TICKET' | 'RECIBO POR HONORARIOS ELECTRONICO' | ''
+
+export interface IOcrExpenseRequest {
+  file?: File
+}

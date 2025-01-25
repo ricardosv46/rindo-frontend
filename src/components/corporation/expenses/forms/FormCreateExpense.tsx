@@ -1,15 +1,18 @@
-import { FileUpload, InputSelect, InputText } from '@components/shared'
+import { FileUpload, InputSelect, InputText, Spinner } from '@components/shared'
 import { InputPicker } from '@components/shared/Inputs/InputPicker'
 import { categories } from '@constants/categories'
 import { currencies } from '@constants/currencies'
 import { typeDocuments } from '@constants/typeDocuments'
+import { useToggle } from '@hooks/useToggle'
 import { Category, Currency, TypeDocument } from '@interfaces/expense'
-import { formatNumber, formatNumberInline, onlyNumbers } from '@lib/utils'
-import { useEffect } from 'react'
+import { cn, formatNumber, formatNumberInline, onlyNumbers, removeAccents } from '@lib/utils'
+import { getOcrExpense } from '@services/expense'
+import { HtmlHTMLAttributes, useEffect } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { z } from 'zod'
 
 export type StepData = {
+  loadedFile?: boolean
   ruc?: string
   companyName?: string
   description?: string
@@ -51,7 +54,8 @@ export const stepSchemaCreateSpend = z
     fileVisa: z.instanceof(File).optional(),
     fileVisaPreview: z.string().optional(),
     fileRxh: z.instanceof(File).optional(),
-    fileRxhPreview: z.string().optional()
+    fileRxhPreview: z.string().optional(),
+    loadedFile: z.boolean().optional()
   })
   .partial()
   .refine(
@@ -67,20 +71,26 @@ export const stepSchemaCreateSpend = z
   .refine(
     (data) => {
       const total = Number(data?.total || 0)
-      return !(total >= 1500 && data?.retention === 0)
+      const isRetentionRequired = total >= 1500 && data?.retention === 0
+      if (isRetentionRequired) {
+        return data?.fileRxhPreview && data?.fileRxhPreview.trim() !== ''
+      }
+      return true
     },
     {
-      message: 'Si el total es mayor a 1500 y la retencion es 0 debe adjuntar una suspeción.',
+      message: 'Si el total es mayor o igual a 1500 y la retención es 0, debe adjuntar una suspensión.',
       path: ['fileRxhPreview']
     }
   )
 
-interface IFormCreateExpense {
+interface IFormCreateExpense extends HtmlHTMLAttributes<HTMLDivElement> {
   index: number
   multiple?: boolean
+  loading?: boolean
+  getDataOcr?: (file: File) => void
 }
 
-export const FormCreateExpense = ({ index, multiple }: IFormCreateExpense) => {
+export const FormCreateExpense = ({ index, multiple, loading, className, getDataOcr }: IFormCreateExpense) => {
   const {
     watch,
     getValues,
@@ -88,8 +98,11 @@ export const FormCreateExpense = ({ index, multiple }: IFormCreateExpense) => {
     setValue,
     control,
     clearErrors,
+    reset,
     formState: { errors }
   } = useFormContext<StepData>()
+  const { typeDocument, category, total, retention, file, filePreview, fileVisaPreview, fileVisa, fileRxhPreview, fileRxh, loadedFile } =
+    watch()
 
   const handleFileChange = (file: File | undefined, filePreview: string | undefined) => {
     setValue('file', file)
@@ -108,18 +121,17 @@ export const FormCreateExpense = ({ index, multiple }: IFormCreateExpense) => {
     setValue('fileRxhPreview', filePreview)
     clearErrors(['fileRxh', 'fileRxhPreview'])
   }
-  const { typeDocument, category, total, retention } = watch()
 
   const showSerie = typeDocument === 'BOLETA DE VENTA' || typeDocument === 'FACTURA ELECTRONICA'
 
   useEffect(() => {
-    if (watch().typeDocument === 'BOLETA DE VENTA' && watch().rus && category !== 'Cuenta no deducible') {
+    if (typeDocument === 'BOLETA DE VENTA' && watch().rus && category !== 'Cuenta no deducible') {
       setValue('category', '')
     }
   }, [typeDocument])
 
   return (
-    <div className="space-y-4">
+    <div className={cn('relative space-y-4 ', loading && 'opacity-50', className)}>
       {multiple && <h2 className="text-2xl font-bold">Step {index + 1}</h2>}
       <section className="grid grid-cols-2">
         <div className="flex items-start justify-center">
@@ -136,7 +148,7 @@ export const FormCreateExpense = ({ index, multiple }: IFormCreateExpense) => {
               errors={errors}
               label="Categoría"
               data={categories}
-              disabled={watch().typeDocument === 'BOLETA DE VENTA' && watch().rus}
+              disabled={typeDocument === 'BOLETA DE VENTA' && watch().rus}
               exceptions={['Cuenta no deducible']}
             />
 
@@ -167,8 +179,9 @@ export const FormCreateExpense = ({ index, multiple }: IFormCreateExpense) => {
               <FileUpload
                 label="Comprobante"
                 name="filePreview"
-                value={watch().filePreview}
-                file={watch().file}
+                value={filePreview}
+                file={file}
+                getDataOcr={getDataOcr}
                 onFileChange={handleFileChange}
                 errors={errors}
               />
@@ -181,8 +194,8 @@ export const FormCreateExpense = ({ index, multiple }: IFormCreateExpense) => {
               <FileUpload
                 label="Estado de cuenta visa"
                 name="fileVisaPreview"
-                value={watch().fileVisaPreview}
-                file={watch().fileVisa}
+                value={fileVisaPreview}
+                file={fileVisa}
                 onFileChange={handleFileChangeVisa}
                 errors={errors}
               />
@@ -196,8 +209,8 @@ export const FormCreateExpense = ({ index, multiple }: IFormCreateExpense) => {
                 <FileUpload
                   label="Suspención de 4ta categoría"
                   name="fileRxhPreview"
-                  value={watch().fileRxhPreview}
-                  file={watch().fileRxh}
+                  value={fileRxhPreview}
+                  file={fileRxh}
                   onFileChange={handleFileChangeRxh}
                   errors={errors}
                 />

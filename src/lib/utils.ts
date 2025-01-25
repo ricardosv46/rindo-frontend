@@ -75,3 +75,9 @@ export const valuesFormData = <T>(data: T) => {
 
   return null
 }
+
+export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+export const removeAccents = (str?: string) => {
+  return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : ''
+}

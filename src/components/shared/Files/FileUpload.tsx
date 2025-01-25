@@ -13,8 +13,9 @@ interface IFileUpload {
   value?: string
   onFileChange: (file: File | undefined, preview: string) => void
   errors?: FieldErrors
+  getDataOcr?: (file: File) => void
 }
-export const FileUpload = ({ name, onFileChange, value, file, label, errors }: IFileUpload) => {
+export const FileUpload = ({ name, onFileChange, value, file, label, errors, getDataOcr }: IFileUpload) => {
   const [filePreview, setFilePreview] = useState<string | undefined>(undefined)
   const helperText = errors?.[name]?.message as string
   const urlToFile = async (url: string, filename: string, mimeType: string): Promise<File> => {
@@ -85,6 +86,9 @@ export const FileUpload = ({ name, onFileChange, value, file, label, errors }: I
     input.accept = 'image/*,application/pdf'
     input.onchange = (e: any) => {
       const file = e.target.files?.[0]
+      if (getDataOcr) {
+        getDataOcr(file)
+      }
       convertFiletoUrl(file)
     }
 
@@ -103,6 +107,9 @@ export const FileUpload = ({ name, onFileChange, value, file, label, errors }: I
     const isValidExtension = allowedExtensions.includes(`.${fileExtension}`)
 
     if (isValidExtension) {
+      if (getDataOcr) {
+        getDataOcr(file)
+      }
       convertFiletoUrl(file)
     } else {
       toast.error('Formato no valido')
