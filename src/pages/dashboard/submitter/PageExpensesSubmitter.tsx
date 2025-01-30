@@ -25,9 +25,11 @@ import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { FileUploadReadOnly } from '@components/shared/Files/FileUploadReadOnly'
+import { ModalDeleteExpense } from '@components/corporation/expenses/modals/ModalDeleteExpense'
 
 const PageExpensesSubmitter = () => {
   const [isOpenModalFile, openModalFile, closeModalFile] = useToggle()
+  const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
   const [dataSelected, setDataSelected] = useState<IExpense | null>(null)
   const [dataSelectedFile, setDataSelectedFile] = useState<string | undefined>(undefined)
   const [filteredExpenses, setFilteredExpenses] = useState<IExpense[]>([])
@@ -72,7 +74,7 @@ const PageExpensesSubmitter = () => {
 
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
     data: filteredExpenses,
-    columns: columnsExpense(setDataSelectedFile, openModalFile),
+    columns: columnsExpense(setDataSelectedFile, setDataSelected, openModalFile, openModalDelete),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel()
   })
@@ -141,7 +143,6 @@ const PageExpensesSubmitter = () => {
           </Fab>
         </Tooltip>
       </div>
-
       <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
         <Table sx={{ minWidth: 750 }} aria-label="customized table">
           <TableHead>
@@ -179,12 +180,19 @@ const PageExpensesSubmitter = () => {
         onPageChange={(e, newPage) => setPageIndex(newPage)}
         onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
       />
-
       <Modal isOpen={isOpenModalFile} onClose={closeModalFile}>
         <Card className="w-[500px] max-h-[95vh] overflow-hidden">
           <FileUploadReadOnly value={dataSelectedFile} />
         </Card>
       </Modal>
+
+      <ModalDeleteExpense
+        {...{
+          isOpen: isOpenModalDelete,
+          onClose: closeModalDelete,
+          data: dataSelected
+        }}
+      />
     </Show>
   )
 }

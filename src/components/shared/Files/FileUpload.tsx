@@ -40,6 +40,7 @@ export const FileUpload = ({ name, onFileChange, value, file, label, errors, get
   }, [file])
 
   const handleConvertUrlToFile = async (url: string) => {
+    console.log({ url })
     const extension = url.split('.').pop()?.toLowerCase()
     let mimeType = ''
     let filename = ''

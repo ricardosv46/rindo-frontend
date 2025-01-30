@@ -1,13 +1,19 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import { IExpense } from '@interfaces/expense'
 import { IconButton } from '@mui/material'
-import { IconEye, IconTrash } from '@tabler/icons-react'
+import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react'
 import { formatNumber } from '@lib/utils'
 import { ChipStatus } from '../components/ChipStatus'
+import { useNavigate } from 'react-router-dom'
 
 const columnHelper = createColumnHelper<IExpense>()
 
-export const columnsExpense = (setDataSelectedFile: (data: string | undefined) => void, openModalFile: () => void) => [
+export const columnsExpense = (
+  setDataSelectedFile: (data: string | undefined) => void,
+  setDataSelected: (data: IExpense) => void,
+  openModalFile: () => void,
+  openModalDelete: () => void
+) => [
   {
     header: 'ID',
     id: 'index',
@@ -105,9 +111,23 @@ export const columnsExpense = (setDataSelectedFile: (data: string | undefined) =
     cell: (info: any) => {
       const data = info.row.original
 
+      const navigate = useNavigate()
+
+      const handleModalDelete = () => {
+        setDataSelected(data)
+        openModalDelete()
+      }
+
+      const handleModalEdit = () => {
+        navigate(`/edit-expense/${data?._id}`)
+      }
+
       return (
         <div className="flex gap-5">
-          <IconButton onClick={() => {}}>
+          <IconButton onClick={handleModalEdit}>
+            <IconEdit className="text-primary-600" />
+          </IconButton>
+          <IconButton onClick={handleModalDelete}>
             <IconTrash className="text-primary-600" />
           </IconButton>
         </div>

@@ -2,33 +2,33 @@ import { FormCreateExpense, StepData, stepSchemaCreateSpend } from '@components/
 import { Spinner } from '@components/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useToggle } from '@hooks/useToggle'
-import { TypeDocument } from '@interfaces/expense'
-import { cn, removeAccents, valuesFormData } from '@lib/utils'
+import { Category, Currency, IExpense, TypeDocument } from '@interfaces/expense'
+import { cn, removeAccents } from '@lib/utils'
 import { Button } from '@mui/material'
-import { createExpense, getOcrExpense } from '@services/expense'
+import { editExpense, getOcrExpense } from '@services/expense'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-export const SingleStep = () => {
+export const EditStep = ({ data }: { data: IExpense }) => {
   const stepsData: StepData = {
-    ruc: '',
-    companyName: '',
-    description: '',
-    category: '',
+    ruc: data?.ruc,
+    companyName: data?.companyName,
+    description: data?.description,
+    category: data?.category as Category,
     file: undefined,
-    filePreview: '',
+    filePreview: data?.file,
     fileVisa: undefined,
-    fileVisaPreview: '',
+    fileVisaPreview: data?.fileVisa,
     fileRxh: undefined,
-    fileRxhPreview: '',
-    currency: '',
-    date: '',
-    serie: '',
-    total: '',
-    typeDocument: '',
+    fileRxhPreview: data?.fileRxh,
+    currency: data?.currency as Currency,
+    date: data?.date,
+    serie: data?.serie,
+    total: String(data?.total),
+    typeDocument: data?.typeDocument as TypeDocument,
     rus: false,
     retention: 0
   }
@@ -38,8 +38,12 @@ export const SingleStep = () => {
     defaultValues: stepsData,
     mode: 'onChange'
   })
-  const [loading, openLoading, closeLoading] = useToggle()
 
+  const [isInitialized, openInitialized] = useToggle()
+  const [fileChange, openFileChange] = useToggle()
+  const [fileVisaChange, openFileVisaChange] = useToggle()
+  const [fileRxhChange, openFileRxhChange] = useToggle()
+  const [loading, openLoading, closeLoading] = useToggle()
   const {
     watch,
     handleSubmit,
@@ -49,13 +53,45 @@ export const SingleStep = () => {
     formState: { errors, isValid }
   } = methods
 
-  const onSubmit = (data: StepData) => {
-    mutateCreate(data)
+  const onSubmit = (props: StepData) => {
+    const dataProps = {
+      ...props,
+      file: fileChange ? props?.file : undefined,
+      fileVisa: fileVisaChange ? props?.fileVisa : undefined,
+      fileRxh: fileRxhChange ? props?.fileRxh : undefined,
+      id: data?._id
+    }
+    mutateEdit(dataProps)
   }
+
+  useEffect(() => {
+    setTimeout(() => {
+      openInitialized()
+    }, 1000)
+  }, [])
+
+  const { file, fileVisa, fileRxh } = watch()
+
+  useEffect(() => {
+    if (isInitialized && file) {
+      openFileChange()
+    }
+  }, [file])
+
+  useEffect(() => {
+    if (isInitialized && fileVisa) {
+      openFileVisaChange()
+    }
+  }, [fileVisa])
+  useEffect(() => {
+    if (isInitialized && fileRxh) {
+      openFileRxhChange()
+    }
+  }, [fileRxh])
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const { mutate: mutateCreate, isPending } = useMutation({
-    mutationFn: createExpense,
+  const { mutate: mutateEdit, isPending } = useMutation({
+    mutationFn: editExpense,
     onError: (error: string) => {
       toast.error(error)
     },
@@ -117,7 +153,7 @@ export const SingleStep = () => {
         <FormCreateExpense index={0} loading={loading} getDataOcr={getDataOcr} className="mt-5" />
         <div className={cn('flex justify-end mt-10', loading && 'opacity-50')}>
           <Button type="submit" variant="contained">
-            Crear Gasto
+            Actualizar Gasto
           </Button>
         </div>
       </form>

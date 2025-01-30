@@ -201,7 +201,7 @@ export const FormCreateExpense = ({ index, multiple, loading, className, getData
               />
             )}
           />
-          {total && Number(total || 0) >= 1500 && retention === 0 && (
+          {((total && Number(total || 0) >= 1500 && retention === 0) || fileRxhPreview) && (
             <Controller
               name="fileRxhPreview"
               control={control}
