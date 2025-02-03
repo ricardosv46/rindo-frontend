@@ -1,4 +1,4 @@
-export type StatusExpense = 'IN_REPORT' | 'APPROVED' | 'DRAFT' | 'REJECTED' | 'IN_REVISION' | ''
+export type ExpenseStatus = 'IN_REPORT' | 'APPROVED' | 'DRAFT' | 'REJECTED' | 'IN_REVISION' | ''
 
 export interface IExpense {
   id?: string
@@ -16,7 +16,7 @@ export interface IExpense {
   serie?: string
   date?: string
   typeDocument?: string
-  status?: StatusExpense
+  status?: ExpenseStatus
 }
 
 export interface IExpenseRequest {

@@ -1,19 +1,49 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import { IExpense } from '@interfaces/expense'
-import { IconButton } from '@mui/material'
-import { IconEdit, IconEye, IconEyeOff, IconTrash } from '@tabler/icons-react'
+import { Checkbox, IconButton } from '@mui/material'
+import { IconEdit, IconEye, IconEyeClosed, IconEyeOff, IconTrash } from '@tabler/icons-react'
 import { formatNumber } from '@lib/utils'
 import { ChipStatus } from '../components/ChipStatus'
 import { useNavigate } from 'react-router-dom'
 
 const columnHelper = createColumnHelper<IExpense>()
 
-export const columnsExpense = (
+export const columnsExpenseByReport = (
   setDataSelectedFile: (data: string | undefined) => void,
-  setDataSelected: (data: IExpense) => void,
   openModalFile: () => void,
-  openModalDelete: () => void
+  dataSelected: IExpense[],
+  setDataSelected: (expenses: IExpense[]) => void,
+  filteredExpenses: IExpense[]
 ) => [
+  {
+    header: () => {
+      const isAllSelected = dataSelected.length === filteredExpenses.length
+
+      const handleSelectAll = () => {
+        if (isAllSelected) {
+          setDataSelected([])
+        } else {
+          setDataSelected(filteredExpenses)
+        }
+      }
+      return <Checkbox checked={isAllSelected} onChange={handleSelectAll} />
+    },
+    id: 'selection',
+    cell: (info: any) => {
+      const data = info.row.original
+      const isSelected = dataSelected.some((expense) => expense._id === data._id)
+
+      const handleSelectionChange = () => {
+        if (isSelected) {
+          setDataSelected(dataSelected.filter((expense) => expense._id !== data._id))
+        } else {
+          setDataSelected([...dataSelected, data])
+        }
+      }
+
+      return <Checkbox checked={isSelected} onChange={handleSelectionChange} />
+    }
+  },
   {
     header: 'ID',
     id: 'index',
@@ -118,35 +148,5 @@ export const columnsExpense = (
         </IconButton>
       )
     }
-  }),
-
-  {
-    header: 'Acción',
-    id: 'accion',
-    cell: (info: any) => {
-      const data = info.row.original
-
-      const navigate = useNavigate()
-
-      const handleModalDelete = () => {
-        setDataSelected(data)
-        openModalDelete()
-      }
-
-      const handleModalEdit = () => {
-        navigate(`/edit-expense/${data?._id}`)
-      }
-
-      return (
-        <div className="flex gap-5">
-          <IconButton onClick={handleModalEdit}>
-            <IconEdit className="text-primary-600" />
-          </IconButton>
-          <IconButton onClick={handleModalDelete}>
-            <IconTrash className="text-primary-600" />
-          </IconButton>
-        </div>
-      )
-    }
-  }
+  })
 ]

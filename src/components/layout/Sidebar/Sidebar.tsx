@@ -1,5 +1,5 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Button, colors } from '@mui/material'
+import { Button, colors, Icon, IconButton, ToggleButton } from '@mui/material'
 import { useSidebar } from '@store/sidebar'
 import { ChevronDown, LayoutDashboard, Settings, Users } from 'lucide-react'
 import { useAuth } from '@store/auth'
@@ -72,14 +72,14 @@ export const MenuItem = ({ item, isExpanded, depth = 0 }: { item: MenuItem; isEx
   const hasSubItems = item.subItems && item.subItems.length > 0
 
   return (
-    <div className="">
-      <Link to={item.url}>
+    <div className="w-full ">
+      <Link to={item.url} className="w-full">
         <Button
           sx={{
             padding: location?.pathname === item?.url ? '6px 8px' : 'auto'
           }}
           variant={location?.pathname === item?.url ? 'contained' : 'text'}
-          className={`w-full flex justify-between bg-red-500  ${depth > 0 ? 'pl-8' : ''}`}
+          className={`w-full flex justify-between ${depth > 0 ? 'pl-8' : ''}`}
           onClick={toggleSubMenu}>
           <div className="flex items-center justify-between w-full ">
             <div className="flex items-center h-[24.5px] ">

@@ -1,9 +1,9 @@
 import { Chip } from '@components/shared'
-import { StatusExpense } from '@interfaces/expense'
+import { ExpenseStatus } from '@interfaces/expense'
 import React from 'react'
 
 interface IChipStatus {
-  status: StatusExpense
+  status: ExpenseStatus
 }
 export const ChipStatus = ({ status }: IChipStatus) => {
   if (status === 'DRAFT') return <Chip label="Borrador" color="blue" />

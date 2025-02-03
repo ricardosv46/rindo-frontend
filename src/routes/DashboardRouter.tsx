@@ -16,6 +16,8 @@ const PageCompaniesCorporation = lazy(() => import('@pages/dashboard/corporation
 const PageCreateExpensesSubmitter = lazy(() => import('@pages/dashboard/submitter/PageCreateExpensesSubmitter'))
 const PageEditExpensesSubmitter = lazy(() => import('@pages/dashboard/submitter/PageEditExpensesSubmitter'))
 const PageExpensesSubmitter = lazy(() => import('@pages/dashboard/submitter/PageExpensesSubmitter'))
+const PageReportsSubmitter = lazy(() => import('@pages/dashboard/submitter/PageReportsSubmitter'))
+const PageCreateReportSubmitter = lazy(() => import('@pages/dashboard/submitter/PageCreateReportSubmitter'))
 
 export const DashboardRouter = () => {
   const { user } = useAuth()
@@ -41,6 +43,8 @@ export const DashboardRouter = () => {
         {user?.role === 'SUBMITTER' && <Route path="expenses" element={<PageExpensesSubmitter />} />}
         {user?.role === 'SUBMITTER' && <Route path="create-expense" element={<PageCreateExpensesSubmitter />} />}
         {user?.role === 'SUBMITTER' && <Route path="edit-expense/:id" element={<PageEditExpensesSubmitter />} />}
+        {user?.role === 'SUBMITTER' && <Route path="reports" element={<PageReportsSubmitter />} />}
+        {user?.role === 'SUBMITTER' && <Route path="create-report" element={<PageCreateReportSubmitter />} />}
         {/* GLOBAL_APPROVER */}
       </Routes>
     </Suspense>
