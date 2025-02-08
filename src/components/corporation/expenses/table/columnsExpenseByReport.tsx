@@ -11,19 +11,19 @@ const columnHelper = createColumnHelper<IExpense>()
 export const columnsExpenseByReport = (
   setDataSelectedFile: (data: string | undefined) => void,
   openModalFile: () => void,
-  dataSelected: IExpense[],
-  setDataSelected: (expenses: IExpense[]) => void,
+  dataSelected: string[],
+  setDataSelected: (expenses: string[]) => void,
   filteredExpenses: IExpense[]
 ) => [
   {
     header: () => {
-      const isAllSelected = dataSelected.length === filteredExpenses.length
+      const isAllSelected = dataSelected?.length === filteredExpenses.length
 
       const handleSelectAll = () => {
         if (isAllSelected) {
           setDataSelected([])
         } else {
-          setDataSelected(filteredExpenses)
+          setDataSelected(filteredExpenses.map((i) => i._id!))
         }
       }
       return <Checkbox checked={isAllSelected} onChange={handleSelectAll} />
@@ -31,13 +31,13 @@ export const columnsExpenseByReport = (
     id: 'selection',
     cell: (info: any) => {
       const data = info.row.original
-      const isSelected = dataSelected.some((expense) => expense._id === data._id)
+      const isSelected = dataSelected?.some((expense) => expense === data._id)
 
       const handleSelectionChange = () => {
         if (isSelected) {
-          setDataSelected(dataSelected.filter((expense) => expense._id !== data._id))
+          setDataSelected(dataSelected?.filter((expense) => expense !== data._id))
         } else {
-          setDataSelected([...dataSelected, data])
+          setDataSelected([...dataSelected, data?._id])
         }
       }
 

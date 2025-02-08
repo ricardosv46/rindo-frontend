@@ -26,6 +26,7 @@ import { ModalDeleteExpense } from '@components/corporation/expenses/modals/Moda
 import { getReports } from '@services/report'
 import { IReport } from '@interfaces/report'
 import { columnsReport } from '@components/corporation/reports/table/columnsReport'
+import { ModalDeleteReport } from '@components/corporation/reports/modals/ModalDeleteReport'
 
 const PageReportsSubmitter = () => {
   const [isOpenModalFile, openModalFile, closeModalFile] = useToggle()
@@ -47,9 +48,7 @@ const PageReportsSubmitter = () => {
     refetch
   } = useQuery({
     queryKey: ['getReports'],
-    queryFn: getReports,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getReports
   })
 
   const { search } = watch()
@@ -184,13 +183,13 @@ const PageReportsSubmitter = () => {
         </Card>
       </Modal>
 
-      {/* <ModalDeleteExpense
+      <ModalDeleteReport
         {...{
           isOpen: isOpenModalDelete,
           onClose: closeModalDelete,
           data: dataSelected
         }}
-      /> */}
+      />
     </Show>
   )
 }

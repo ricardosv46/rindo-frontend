@@ -22,7 +22,6 @@ export interface IExpense {
 export interface IExpenseRequest {
   id?: string
   _id?: string
-
   ruc?: string
   companyName?: string
   description?: string

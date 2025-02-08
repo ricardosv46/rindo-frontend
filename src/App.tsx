@@ -31,7 +31,18 @@ const theme = createTheme({
   }
 })
 const App = () => {
-  const queryClient = new QueryClient()
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        retry: false,
+        staleTime: 0,
+        gcTime: 0
+      }
+    }
+  })
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>

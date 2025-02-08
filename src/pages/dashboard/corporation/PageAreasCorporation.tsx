@@ -48,16 +48,12 @@ const PageAreasCorporation = () => {
     refetch
   } = useQuery({
     queryKey: ['getAreas'],
-    queryFn: getAreas,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getAreas
   })
 
   const { data: companies = [], isLoading: isLoadingCompanies } = useQuery({
     queryKey: ['getCompanies'],
-    queryFn: getCompanies,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getCompanies
   })
 
   const { search, company } = watch()

@@ -1,11 +1,14 @@
+import { columnsExpense } from '@components/corporation/expenses/table/columnsExpense'
 import { columnsExpenseByReport } from '@components/corporation/expenses/table/columnsExpenseByReport'
 import { Card, Modal, Show, Spinner } from '@components/shared'
 import { FileUploadReadOnly } from '@components/shared/Files/FileUploadReadOnly'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useToggle } from '@hooks/useToggle'
 import { IExpense } from '@interfaces/expense'
+import { IReport } from '@interfaces/report'
 import {
   Button,
+  Divider,
   FormControl,
   FormHelperText,
   InputAdornment,
@@ -19,13 +22,13 @@ import {
   TextField
 } from '@mui/material'
 import { getExpenses } from '@services/expense'
-import { createReport } from '@services/report'
+import { createReport, editReport, getReport } from '@services/report'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 
@@ -41,7 +44,7 @@ export const validationSchema = z.object({
   expenses: z.array(z.string()).min(1, 'Debe seleccionar al menos un gasto.')
 })
 
-const PageCreateReportSubmitter = () => {
+const PageEditReportSubmitter = () => {
   const navigate = useNavigate()
   const [filteredExpenses, setFilteredExpenses] = useState<IExpense[]>([])
   const [dataSelectedFile, setDataSelectedFile] = useState<string | undefined>(undefined)
@@ -61,11 +64,51 @@ const PageCreateReportSubmitter = () => {
     },
     mode: 'onChange'
   })
+  const { search, expenses } = watch()
+
+  const { id } = useParams()
+
+  const getReportData = async () => {
+    try {
+      const data = await getReport({ id: id! })
+      setValue('name', data?.name!)
+      setValue('expenses', data?.expenses!)
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const {
+    data: report = {} as IReport,
+    isFetching: isFetchingReport,
+    refetch: refetchReport
+  } = useQuery({
+    queryKey: ['getReport', id],
+    queryFn: getReportData,
+    enabled: !!id
+  })
+
+  //const {
+  //  mutate: mutateGetExpense,
+  //  isPending,
+  //  data: report = {} as IReport
+  //} = useMutation({
+  //  mutationFn: getReport,
+  //  onSuccess(data) {
+  //    setValue('name', data?.name!)
+  //    setValue('expenses', data?.expenses!)
+  //  }
+  //})
+
+  //useEffect(() => {
+  //  mutateGetExpense({ id: id! })
+  //}, [])
 
   const getExpensesDraft = async () => {
     try {
       const data = await getExpenses()
-      const expnesesDraft = data?.filter((i) => i?.status === 'DRAFT')
+      const expnesesDraft = data?.filter((i) => i?.status === 'DRAFT' || expenses.includes(i?._id!))
       return expnesesDraft
     } catch (error) {
       throw error
@@ -79,12 +122,13 @@ const PageCreateReportSubmitter = () => {
     refetch
   } = useQuery({
     queryKey: ['getExpenses'],
-    queryFn: getExpensesDraft
+    queryFn: getExpensesDraft,
+    enabled: !isFetchingReport && expenses?.length > 0
   })
 
   const queryClient = useQueryClient()
-  const { mutate: mutateCreate, isPending: isPendingCreate } = useMutation({
-    mutationFn: createReport,
+  const { mutate: mutateEdit, isPending: isPendingCreate } = useMutation({
+    mutationFn: editReport,
     onError: (error: string) => {
       toast.error(error)
     },
@@ -97,10 +141,8 @@ const PageCreateReportSubmitter = () => {
 
   const onSubmit = async (values: IFormCreateReport) => {
     const { search, ...props } = values
-    mutateCreate(props)
+    mutateEdit({ ...props, id: report?._id })
   }
-
-  const { search, expenses } = watch()
 
   useEffect(() => {
     if (isFetchingExpenses) return
@@ -118,7 +160,7 @@ const PageCreateReportSubmitter = () => {
     })
 
     setFilteredExpenses(newData)
-  }, [search, isFetchingExpenses])
+  }, [search, isFetchingExpenses, isFetchingReport])
 
   const handleSeletedForm = (expenses: string[]) => {
     setValue('expenses', expenses, { shouldValidate: true })
@@ -132,7 +174,7 @@ const PageCreateReportSubmitter = () => {
   })
 
   return (
-    <Show condition={isLoadingExpenses} loadingComponent={<Spinner />}>
+    <Show condition={isLoadingExpenses || isFetchingReport} loadingComponent={<Spinner />}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 py-2">
         <Controller
           name="name"
@@ -217,7 +259,7 @@ const PageCreateReportSubmitter = () => {
             </FormControl>
 
             <Button className="" type="submit" variant="contained" disabled={isPendingCreate}>
-              Crear Informe
+              Actualizar Informe
             </Button>
           </div>
         </div>
@@ -232,4 +274,4 @@ const PageCreateReportSubmitter = () => {
   )
 }
 
-export default PageCreateReportSubmitter
+export default PageEditReportSubmitter

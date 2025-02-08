@@ -58,9 +58,7 @@ const PageUsersCorporation = () => {
     isFetching: isFetchingUsers
   } = useQuery({
     queryKey: ['getUsers'],
-    queryFn: getUsers,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getUsers
   })
 
   const {
@@ -70,16 +68,12 @@ const PageUsersCorporation = () => {
     refetch
   } = useQuery({
     queryKey: ['getAreas'],
-    queryFn: getAreas,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getAreas
   })
 
   const { data: companies = [], isLoading: isLoadingCompanies } = useQuery({
     queryKey: ['getCompanies'],
-    queryFn: getCompanies,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getCompanies
   })
 
   const { company, area, role, search } = watch()

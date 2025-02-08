@@ -6,15 +6,14 @@ export interface IReport {
   id?: string
   _id?: string
   name?: string
-  expenses?: IExpense[]
+  expenses?: string[]
   status?: ReportStatus
   created?: string
 }
 
-export interface IExpenseRequest {
+export interface IReportRequest {
   id?: string
   _id?: string
   name?: string
-  status?: ReportStatus
   expenses?: string[]
 }

@@ -52,9 +52,7 @@ const PageApproversCorporation = () => {
     isFetching: isFetchingUsers
   } = useQuery({
     queryKey: ['getApprovers'],
-    queryFn: getApprovers,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getApprovers
   })
 
   const {
@@ -63,9 +61,7 @@ const PageApproversCorporation = () => {
     isFetching: isFetchingAreas
   } = useQuery({
     queryKey: ['getAreas'],
-    queryFn: getAreas,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getAreas
   })
 
   const {
@@ -74,9 +70,7 @@ const PageApproversCorporation = () => {
     isFetched: isFetchedCompanies
   } = useQuery({
     queryKey: ['getCompanies'],
-    queryFn: getCompanies,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getCompanies
   })
 
   const { company, area, search } = watch()

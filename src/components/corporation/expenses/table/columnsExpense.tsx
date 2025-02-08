@@ -2,7 +2,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import { IExpense } from '@interfaces/expense'
 import { IconButton } from '@mui/material'
 import { IconEdit, IconEye, IconEyeOff, IconTrash } from '@tabler/icons-react'
-import { formatNumber } from '@lib/utils'
+import { cn, formatNumber } from '@lib/utils'
 import { ChipStatus } from '../components/ChipStatus'
 import { useNavigate } from 'react-router-dom'
 
@@ -63,7 +63,7 @@ export const columnsExpense = (
       if (!data?.file)
         return (
           <IconButton disabled>
-            <IconEyeOff className="text-gray-300" />
+            <IconEyeOff className="disabled:text-gray-600" />
           </IconButton>
         )
       return (
@@ -85,7 +85,7 @@ export const columnsExpense = (
       if (!data?.fileVisa)
         return (
           <IconButton disabled>
-            <IconEyeOff className="text-gray-300" />
+            <IconEyeOff className="disabled:text-gray-600" />
           </IconButton>
         )
       return (
@@ -108,7 +108,7 @@ export const columnsExpense = (
       if (!data?.fileRxh)
         return (
           <IconButton disabled>
-            <IconEyeOff className="text-gray-300" />
+            <IconEyeOff className="disabled:text-gray-600" />
           </IconButton>
         )
 
@@ -125,7 +125,7 @@ export const columnsExpense = (
     id: 'accion',
     cell: (info: any) => {
       const data = info.row.original
-
+      const disabled = info.row.original?.status !== 'DRAFT'
       const navigate = useNavigate()
 
       const handleModalDelete = () => {
@@ -137,13 +137,20 @@ export const columnsExpense = (
         navigate(`/edit-expense/${data?._id}`)
       }
 
+      const handleModalDetail = () => {
+        navigate(`/expense/${data?._id}`)
+      }
+
       return (
         <div className="flex gap-5">
-          <IconButton onClick={handleModalEdit}>
-            <IconEdit className="text-primary-600" />
+          <IconButton onClick={handleModalDetail}>
+            <IconEye className="text-primary-600" />
           </IconButton>
-          <IconButton onClick={handleModalDelete}>
-            <IconTrash className="text-primary-600" />
+          <IconButton onClick={handleModalEdit} disabled={disabled}>
+            <IconEdit className={cn(disabled ? 'disabled:text-gray-600' : 'text-primary-600')} />
+          </IconButton>
+          <IconButton onClick={handleModalDelete} disabled={disabled}>
+            <IconTrash className={cn(disabled ? 'disabled:text-gray-600' : 'text-primary-600')} />
           </IconButton>
         </div>
       )

@@ -1,10 +1,15 @@
 import { UploadIcon } from '@icons/UploadIcon'
 import { cn } from '@lib/utils'
 import { FormControl, FormHelperText } from '@mui/material'
+import { IconEye } from '@tabler/icons-react'
 import { CircleX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { FieldErrors } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import { Modal } from '../Modal/Modal'
+import { Card } from '../Card/Card'
+import { FileUploadReadOnly } from './FileUploadReadOnly'
+import { useToggle } from '@hooks/useToggle'
 
 interface IFileUpload {
   name: string
@@ -14,8 +19,10 @@ interface IFileUpload {
   onFileChange: (file: File | undefined, preview: string) => void
   errors?: FieldErrors
   getDataOcr?: (file: File) => void
+  disabledClose?: boolean
 }
-export const FileUpload = ({ name, onFileChange, value, file, label, errors, getDataOcr }: IFileUpload) => {
+export const FileUpload = ({ name, onFileChange, value, file, label, errors, getDataOcr, disabledClose = false }: IFileUpload) => {
+  const [isOpenModalFile, openModalFile, closeModalFile] = useToggle()
   const [filePreview, setFilePreview] = useState<string | undefined>(undefined)
   const helperText = errors?.[name]?.message as string
   const urlToFile = async (url: string, filename: string, mimeType: string): Promise<File> => {
@@ -158,12 +165,24 @@ export const FileUpload = ({ name, onFileChange, value, file, label, errors, get
             }}
           />
         )}
-        {filePreview && (
+        {filePreview && !disabledClose && (
           <button className="absolute top-1 right-1 " onClick={handleRemoveFile}>
             <CircleX className="p-0.5 text-white bg-red-600 rounded-full" />
           </button>
         )}
+
+        {filePreview && (
+          <button className="absolute rounded-full bg-primary-600 top-1 left-1" type="button" onClick={openModalFile}>
+            <IconEye className="p-0.5 text-white" />
+          </button>
+        )}
       </div>
+
+      <Modal isOpen={isOpenModalFile} onClose={closeModalFile}>
+        <Card className="w-[500px] max-h-[95vh] overflow-hidden">
+          <FileUploadReadOnly value={filePreview} />
+        </Card>
+      </Modal>
       {errors?.[name] && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   )

@@ -44,9 +44,7 @@ const PageCompaniesCorporation = () => {
     isFetching: isFetchingCompanies
   } = useQuery({
     queryKey: ['getCompanies'],
-    queryFn: getCompanies,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getCompanies
   })
 
   const { search } = watch()

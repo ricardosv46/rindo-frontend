@@ -47,9 +47,7 @@ const PageExpensesSubmitter = () => {
     refetch
   } = useQuery({
     queryKey: ['getExpenses'],
-    queryFn: getExpenses,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getExpenses
   })
 
   const { search } = watch()

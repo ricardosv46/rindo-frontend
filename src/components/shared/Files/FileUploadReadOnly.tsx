@@ -15,6 +15,7 @@ interface IFileUpload {
 export const FileUploadReadOnly = ({ value }: IFileUpload) => {
   const [isLoading, openLoading, closeLoading] = useToggle(true)
   const [filePreview, setFilePreview] = useState<string | undefined>(undefined)
+
   const urlToFile = async (url: string, filename: string, mimeType: string): Promise<File> => {
     const response = await fetch(url)
     const data = await response.blob()
@@ -28,8 +29,10 @@ export const FileUploadReadOnly = ({ value }: IFileUpload) => {
   const loadFile = async () => {
     openLoading()
     const extension = value?.split('.').pop()?.toLowerCase()
-    if (value && value?.length > 0 && ['png', 'jpg', 'jpeg', 'pdf'].includes(extension || '')) {
+    if (value && value?.length > 0 && ['png', 'jpg', 'jpeg', 'pdf'].includes(extension || '') && value.startsWith('https:')) {
       await handleConvertUrlToFile(value)
+    } else {
+      setFilePreview(value)
     }
     closeLoading()
   }

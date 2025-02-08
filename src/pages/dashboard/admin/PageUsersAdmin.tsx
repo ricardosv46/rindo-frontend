@@ -37,9 +37,7 @@ const PageUsersAdmin = () => {
   const [dataSelected, setDataSelected] = useState<IUser | null>(null)
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['getUsers'],
-    queryFn: getUsers,
-    retry: false,
-    refetchOnWindowFocus: false
+    queryFn: getUsers
   })
 
   const columnHelper = createColumnHelper<IUser>()
