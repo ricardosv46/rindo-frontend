@@ -31,6 +31,15 @@ export const editExpense = async ({ id, ...props }: IExpenseRequest) => {
   }
 }
 
+export const editExpenseStatus = async ({ id, ...props }: IExpenseRequest) => {
+  try {
+    const { data } = await apiService.put(`/expenses/${id}/status`, props)
+    return data
+  } catch (error: any) {
+    throw error?.response?.data?.message
+  }
+}
+
 export const createExpense = async (props: IExpenseRequest) => {
   try {
     const formData = valuesFormData(props)

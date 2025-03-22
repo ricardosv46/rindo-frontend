@@ -1,7 +1,8 @@
-import { columnsArea, ModalCreateArea, ModalUpdateArea } from '@components/corporation'
+import { columnsApprover, ModalAddApprover, ModalDeleteApprover } from '@components/corporation'
 import { Show, Spinner } from '@components/shared'
 import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
+import { IUser } from '@interfaces/user'
 import {
   Fab,
   FormControl,
@@ -21,66 +22,103 @@ import {
 } from '@mui/material'
 import { getAreas } from '@services/area'
 import { getCompanies } from '@services/company'
+import { getApprovers } from '@services/user'
 import { useQuery } from '@tanstack/react-query'
 
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { Plus, SearchIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-const PageAreasCorporation = () => {
-  const [isOpenModalUpdate, openModalUpdate, closeModalUpdate] = useToggle()
-  const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
+const PageApprovers = () => {
+  const [isOpenModalAdd, openModalAdd, closeModalAdd] = useToggle()
+  const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
 
-  const [dataSelected, setDataSelected] = useState<IArea | null>(null)
+  const [dataSelected, setDataSelected] = useState<IUser | null>(null)
+  const [filteredUsers, setFilteredUsers] = useState<IUser[]>([])
   const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
-  const { watch, control } = useForm({
+
+  const { watch, control, setValue } = useForm({
     defaultValues: {
       search: '',
-      company: 'all'
+      company: 'all',
+      area: 'all'
     }
+  })
+
+  const {
+    data: users = [],
+    isLoading: isLoadingUsers,
+    isFetching: isFetchingUsers
+  } = useQuery({
+    queryKey: ['getApprovers'],
+    queryFn: getApprovers
   })
 
   const {
     data: areas = [],
     isLoading: isLoadingAreas,
-    isFetching: isFetchingAreas,
-    refetch
+    isFetching: isFetchingAreas
   } = useQuery({
     queryKey: ['getAreas'],
     queryFn: getAreas
   })
 
-  const { data: companies = [], isLoading: isLoadingCompanies } = useQuery({
+  const {
+    data: companies = [],
+    isLoading: isLoadingCompanies,
+    isFetched: isFetchedCompanies
+  } = useQuery({
     queryKey: ['getCompanies'],
     queryFn: getCompanies
   })
 
-  const { search, company } = watch()
+  const { company, area, search } = watch()
 
   useEffect(() => {
     if (isFetchingAreas) return
+    const all = company === 'all'
+    setValue('area', 'all')
 
-    const newData = areas.filter((area) => {
-      const companyMatch = company === 'all' || area.company?._id === company
+    const data = all ? areas : areas.filter((area) => watch().company === area?.company?._id)
+    setFilteredAreas(data)
+  }, [company, isFetchingAreas])
+
+  useEffect(() => {
+    if (isFetchingAreas && isFetchingUsers) return
+
+    const areaUsed = areas.find((i) => i?._id === area)
+    const approvers = areaUsed?.approvers?.map((i) => i.approver)
+    const areaMatch = area === 'all'
+
+    const newData = users.filter((user) => {
+      const globalApprover = user.role === 'GLOBAL_APPROVER'
+      const companyMatch = company === 'all' || user.company?._id === company || globalApprover
+      const userMatch = areaMatch ? true : approvers?.includes(user?._id)
       const searchMatch =
-        area.name?.toLowerCase().includes(search.toLocaleLowerCase()) ||
-        area.company?.name?.toLowerCase().includes(search.toLocaleLowerCase())
-      return companyMatch && searchMatch
+        user.name?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.lastname?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.email?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.phone?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.document?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        user.company?.name?.toLowerCase().includes(search.toLocaleLowerCase())
+      return companyMatch && userMatch && searchMatch
     })
 
-    setFilteredAreas(newData)
-  }, [company, search, isFetchingAreas])
+    const dataOrdered = areaMatch ? newData : newData.sort((a, b) => approvers?.indexOf(a?._id!)! - approvers?.indexOf(b?._id!)!)
+
+    setFilteredUsers(dataOrdered)
+  }, [company, area, search, isFetchingAreas, isFetchingUsers])
 
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
-    data: filteredAreas,
-    columns: columnsArea(setDataSelected, openModalUpdate, refetch),
+    data: filteredUsers,
+    columns: columnsApprover(areas, setDataSelected, openModalDelete, area),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel()
   })
 
   return (
-    <Show condition={isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
+    <Show condition={isLoadingUsers || isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
       <div className="flex justify-between">
         <div className="flex gap-5">
           <Controller
@@ -131,17 +169,50 @@ const PageAreasCorporation = () => {
               )}
             />
           </FormControl>
+          <FormControl sx={{ minWidth: 120 }} size="small">
+            <InputLabel id="select-company-label">Area</InputLabel>
+            <Controller
+              name="area"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  labelId="select-company-label"
+                  id="select-company"
+                  label="Empresa"
+                  defaultValue=""
+                  disabled={company === 'all'}
+                  MenuProps={{
+                    disablePortal: true
+                  }}>
+                  {filteredAreas.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
+                  {filteredAreas.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
+                  {filteredAreas.map((i) => (
+                    <MenuItem key={i._id} value={i._id}>
+                      {i?.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+          </FormControl>
         </div>
 
-        <Tooltip title="Crear Area">
-          <Fab color="primary" onClick={openModalCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
-            <Plus className="w-5 h-5" />
-          </Fab>
+        <Tooltip title="Agregar Aprobador">
+          <span>
+            <Fab
+              color="primary"
+              disabled={area === 'all'}
+              onClick={openModalAdd}
+              size="small"
+              sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
+              <Plus className="w-5 h-5" />
+            </Fab>
+          </span>
         </Tooltip>
       </div>
-
       <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
-        <Table sx={{ minWidth: 750 }} aria-label="customized table">
+        <Table className="min-w-[1600px]">
           <TableHead>
             {getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -178,10 +249,26 @@ const PageAreasCorporation = () => {
         onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
       />
 
-      <ModalCreateArea {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate, companies }} />
-      <ModalUpdateArea {...{ isOpen: isOpenModalUpdate, onClose: closeModalUpdate, data: dataSelected }} />
+      <ModalAddApprover
+        {...{
+          isOpen: isOpenModalAdd,
+          onClose: closeModalAdd,
+          company: watch()?.company,
+          area: watch()?.area,
+          users,
+          areas
+        }}
+      />
+      <ModalDeleteApprover
+        {...{
+          isOpen: isOpenModalDelete,
+          onClose: closeModalDelete,
+          data: dataSelected,
+          area: watch()?.area
+        }}
+      />
     </Show>
   )
 }
 
-export default PageAreasCorporation
+export default PageApprovers

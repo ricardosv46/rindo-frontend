@@ -1,14 +1,13 @@
-import { createColumnHelper } from '@tanstack/react-table'
+import { ChipStatusExpense } from '@components/corporation/expenses/components/ChipStatusExpense'
 import { IExpense } from '@interfaces/expense'
-import { Checkbox, IconButton } from '@mui/material'
-import { IconEdit, IconEye, IconEyeClosed, IconEyeOff, IconTrash } from '@tabler/icons-react'
 import { formatNumber } from '@lib/utils'
-import { ChipStatus } from '../components/ChipStatus'
-import { useNavigate } from 'react-router-dom'
+import { Checkbox, IconButton } from '@mui/material'
+import { IconEye, IconEyeOff } from '@tabler/icons-react'
+import { createColumnHelper } from '@tanstack/react-table'
 
 const columnHelper = createColumnHelper<IExpense>()
 
-export const columnsExpenseByReport = (
+export const columnsExpenseByReportReadOnly = (
   setDataSelectedFile: (data: string | undefined) => void,
   openModalFile: () => void,
   dataSelected: string[],
@@ -73,9 +72,13 @@ export const columnsExpenseByReport = (
     header: 'Moneda',
     cell: (info) => info.getValue()
   }),
+  columnHelper.accessor('serie', {
+    header: 'Serie',
+    cell: (info) => info.getValue()
+  }),
   columnHelper.accessor('status', {
     header: 'Estado',
-    cell: (info) => <ChipStatus status={info.getValue()!} />
+    cell: (info) => <ChipStatusExpense status={info.getValue()!} />
   }),
   columnHelper.accessor('category', {
     header: 'Categoria',

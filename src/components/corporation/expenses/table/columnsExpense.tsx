@@ -3,7 +3,7 @@ import { IExpense } from '@interfaces/expense'
 import { IconButton } from '@mui/material'
 import { IconEdit, IconEye, IconEyeOff, IconTrash } from '@tabler/icons-react'
 import { cn, formatNumber } from '@lib/utils'
-import { ChipStatus } from '../components/ChipStatus'
+import { ChipStatusExpense } from '../components/ChipStatusExpense'
 import { useNavigate } from 'react-router-dom'
 
 const columnHelper = createColumnHelper<IExpense>()
@@ -43,9 +43,13 @@ export const columnsExpense = (
     header: 'Moneda',
     cell: (info) => info.getValue()
   }),
+  columnHelper.accessor('serie', {
+    header: 'Serie',
+    cell: (info) => info.getValue()
+  }),
   columnHelper.accessor('status', {
     header: 'Estado',
-    cell: (info) => <ChipStatus status={info.getValue()!} />
+    cell: (info) => <ChipStatusExpense status={info.getValue()!} />
   }),
   columnHelper.accessor('category', {
     header: 'Categoria',

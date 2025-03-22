@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import React, { ButtonHTMLAttributes } from 'react'
 interface ChipProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: string
-  color: 'green' | 'red' | 'purple' | 'gray' | 'yellow' | 'blue'
+  color: 'green' | 'red' | 'purple' | 'gray' | 'yellow' | 'blue' | 'warning'
   button?: boolean
 }
 export const Chip = ({ label, color, className, button, ...props }: ChipProps) => {
@@ -13,6 +13,7 @@ export const Chip = ({ label, color, className, button, ...props }: ChipProps) =
     if (color === 'gray') return ' bg-gray-300 text-gray-600'
     if (color === 'yellow') return ' bg-yellow-300 text-yellow-600'
     if (color === 'blue') return ' bg-blue-300 text-blue-600'
+    if (color === 'warning') return ' bg-orange-200 text-orange-600'
   }
 
   return button ? (

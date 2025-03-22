@@ -1,4 +1,4 @@
-import { columnsExpenseByReport } from '@components/corporation/expenses/table/columnsExpenseByReport'
+import { columnsExpenseByReport } from '@components/corporation/reports/table/columnsExpenseByReport'
 import { Card, Modal, Show, Spinner } from '@components/shared'
 import { FileUploadReadOnly } from '@components/shared/Files/FileUploadReadOnly'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -41,7 +41,7 @@ export const validationSchema = z.object({
   expenses: z.array(z.string()).min(1, 'Debe seleccionar al menos un gasto.')
 })
 
-const PageCreateReportSubmitter = () => {
+const PageCreateReport = () => {
   const navigate = useNavigate()
   const [filteredExpenses, setFilteredExpenses] = useState<IExpense[]>([])
   const [dataSelectedFile, setDataSelectedFile] = useState<string | undefined>(undefined)
@@ -126,7 +126,13 @@ const PageCreateReportSubmitter = () => {
 
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
     data: filteredExpenses,
-    columns: columnsExpenseByReport(setDataSelectedFile, openModalFile, expenses, handleSeletedForm, filteredExpenses),
+    columns: columnsExpenseByReport({
+      setDataSelectedFile,
+      openModalFile,
+      dataSelected: expenses,
+      setDataSelected: handleSeletedForm,
+      filteredExpenses
+    }),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel()
   })
@@ -232,4 +238,4 @@ const PageCreateReportSubmitter = () => {
   )
 }
 
-export default PageCreateReportSubmitter
+export default PageCreateReport

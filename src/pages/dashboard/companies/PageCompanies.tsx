@@ -25,7 +25,7 @@ import { Plus, SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-const PageCompaniesCorporation = () => {
+const PageCompanies = () => {
   const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
   const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
 
@@ -146,4 +146,4 @@ const PageCompaniesCorporation = () => {
   )
 }
 
-export default PageCompaniesCorporation
+export default PageCompanies

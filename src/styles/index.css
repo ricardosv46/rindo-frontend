@@ -17,9 +17,11 @@
 
 body,
 html {
-  font-family {
+  /*  font-family {
     @apply font-gogh;
-  }
+  } */
+  font-size: 14px;
+  font-family: 'Roboto', sans-serif;
 }
 
 @layer base {

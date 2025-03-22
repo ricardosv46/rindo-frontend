@@ -11,6 +11,15 @@ export const getAreas = async (): Promise<IArea[]> => {
   }
 }
 
+export const getArea = async ({ id }: { id: string }): Promise<IArea> => {
+  try {
+    const { data } = await apiService.get(`/areas/${id}`)
+    return data?.data
+  } catch (error: any) {
+    throw error?.response?.data?.message
+  }
+}
+
 export const createArea = async (props: IAreaRequest) => {
   try {
     const { data } = await apiService.post(`/areas/create`, props)

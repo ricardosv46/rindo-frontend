@@ -4,22 +4,21 @@ import { useAuth } from '../store/auth'
 import { Spinner } from '@components/shared'
 
 const PageDashboard = lazy(() => import('@pages/dashboard/PageDashboard'))
-const PageUsersAdmin = lazy(() => import('@pages/dashboard/admin/PageUsersAdmin'))
+const PageUsersAdmin = lazy(() => import('@pages/dashboard/users/PageUsersAdmin'))
 
-const PageUsersCorporation = lazy(() => import('@pages/dashboard/corporation/PageUsersCorporation'))
-const PageExpensesCorporation = lazy(() => import('@pages/dashboard/corporation/PageExpensesCorporation'))
-const PageReportsCorporation = lazy(() => import('@pages/dashboard/corporation/PageReportsCorporation'))
-const PageApproversCorporation = lazy(() => import('@pages/dashboard/corporation/PageApproversCorporation'))
-const PageAreasCorporation = lazy(() => import('@pages/dashboard/corporation/PageAreasCorporation'))
-const PageCompaniesCorporation = lazy(() => import('@pages/dashboard/corporation/PageCompaniesCorporation'))
+const PageUsersCorporation = lazy(() => import('@pages/dashboard/users/PageUsersCorporation'))
+const PageApprovers = lazy(() => import('@pages/dashboard/approvers/PageApprovers'))
+const PageAreas = lazy(() => import('@pages/dashboard/areas/PageAreas'))
+const PageCompanies = lazy(() => import('@pages/dashboard/companies/PageCompanies'))
 
-const PageCreateExpensesSubmitter = lazy(() => import('@pages/dashboard/submitter/PageCreateExpensesSubmitter'))
-const PageEditExpensesSubmitter = lazy(() => import('@pages/dashboard/submitter/PageEditExpensesSubmitter'))
-const PageDetailExpenseSubmitter = lazy(() => import('@pages/dashboard/submitter/PageDetailExpenseSubmitter'))
-const PageExpensesSubmitter = lazy(() => import('@pages/dashboard/submitter/PageExpensesSubmitter'))
-const PageReportsSubmitter = lazy(() => import('@pages/dashboard/submitter/PageReportsSubmitter'))
-const PageCreateReportSubmitter = lazy(() => import('@pages/dashboard/submitter/PageCreateReportSubmitter'))
-const PageEditReportSubmitter = lazy(() => import('@pages/dashboard/submitter/PageEditReportSubmitter'))
+const PageCreateExpenses = lazy(() => import('@pages/dashboard/expenses/PageCreateExpenses'))
+const PageEditExpenses = lazy(() => import('@pages/dashboard/expenses/PageEditExpenses'))
+const PageDetailExpense = lazy(() => import('@pages/dashboard/expenses/PageDetailExpense'))
+const PageExpenses = lazy(() => import('@pages/dashboard/expenses/PageExpenses'))
+const PageReports = lazy(() => import('@pages/dashboard/reports/PageReports'))
+const PageCreateReport = lazy(() => import('@pages/dashboard/reports/PageCreateReport'))
+const PageEditReport = lazy(() => import('@pages/dashboard/reports/PageEditReport'))
+const PageDetailReport = lazy(() => import('@pages/dashboard/reports/PageDetailReport'))
 
 export const DashboardRouter = () => {
   const { user } = useAuth()
@@ -32,24 +31,32 @@ export const DashboardRouter = () => {
         {user?.role === 'ADMIN' && <Route path="users" element={<PageUsersAdmin />} />}
 
         {/* CORPORATION */}
-        {user?.role === 'CORPORATION' && <Route path="reports" element={<PageReportsCorporation />} />}
-        {user?.role === 'CORPORATION' && <Route path="expenses" element={<PageExpensesCorporation />} />}
+        {user?.role === 'CORPORATION' && <Route path="reports" element={<PageReports />} />}
+        {user?.role === 'CORPORATION' && <Route path="expenses" element={<PageExpenses />} />}
         {user?.role === 'CORPORATION' && <Route path="users" element={<PageUsersCorporation />} />}
-        {user?.role === 'CORPORATION' && <Route path="approvers" element={<PageApproversCorporation />} />}
-        {user?.role === 'CORPORATION' && <Route path="areas" element={<PageAreasCorporation />} />}
-        {user?.role === 'CORPORATION' && <Route path="companies" element={<PageCompaniesCorporation />} />}
-
-        {/* APPROVER */}
+        {user?.role === 'CORPORATION' && <Route path="approvers" element={<PageApprovers />} />}
+        {user?.role === 'CORPORATION' && <Route path="areas" element={<PageAreas />} />}
+        {user?.role === 'CORPORATION' && <Route path="companies" element={<PageCompanies />} />}
 
         {/* SUBMITTER */}
-        {user?.role === 'SUBMITTER' && <Route path="expenses" element={<PageExpensesSubmitter />} />}
-        {user?.role === 'SUBMITTER' && <Route path="create-expense" element={<PageCreateExpensesSubmitter />} />}
-        {user?.role === 'SUBMITTER' && <Route path="edit-expense/:id" element={<PageEditExpensesSubmitter />} />}
-        {user?.role === 'SUBMITTER' && <Route path="expense/:id" element={<PageDetailExpenseSubmitter />} />}
-        {user?.role === 'SUBMITTER' && <Route path="reports" element={<PageReportsSubmitter />} />}
-        {user?.role === 'SUBMITTER' && <Route path="create-report" element={<PageCreateReportSubmitter />} />}
-        {user?.role === 'SUBMITTER' && <Route path="edit-report/:id" element={<PageEditReportSubmitter />} />}
+        {user?.role === 'SUBMITTER' && <Route path="expenses" element={<PageExpenses />} />}
+        {user?.role === 'SUBMITTER' && <Route path="create-expense" element={<PageCreateExpenses />} />}
+        {user?.role === 'SUBMITTER' && <Route path="edit-expense/:id" element={<PageEditExpenses />} />}
+        {user?.role === 'SUBMITTER' && <Route path="expense/:id" element={<PageDetailExpense />} />}
+        {user?.role === 'SUBMITTER' && <Route path="reports" element={<PageReports />} />}
+        {user?.role === 'SUBMITTER' && <Route path="create-report" element={<PageCreateReport />} />}
+        {user?.role === 'SUBMITTER' && <Route path="edit-report/:id" element={<PageEditReport />} />}
+        {user?.role === 'SUBMITTER' && <Route path="report/:id" element={<PageDetailReport />} />}
+
+        {/* APPROVER */}
+        {user?.role === 'APPROVER' && <Route path="to-review" element={<PageReports />} />}
+        {user?.role === 'APPROVER' && <Route path="reviewed" element={<PageReports />} />}
+        {user?.role === 'APPROVER' && <Route path="report/:id" element={<PageDetailReport />} />}
+
         {/* GLOBAL_APPROVER */}
+        {user?.role === 'GLOBAL_APPROVER' && <Route path="to-review" element={<PageReports />} />}
+        {user?.role === 'GLOBAL_APPROVER' && <Route path="reviewed" element={<PageReports />} />}
+        {user?.role === 'GLOBAL_APPROVER' && <Route path="report/:id" element={<PageDetailReport />} />}
       </Routes>
     </Suspense>
   )

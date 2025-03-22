@@ -4,17 +4,14 @@ import { IconButton } from '@mui/material'
 import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react'
 import { formatNumber } from '@lib/utils'
 import { useNavigate } from 'react-router-dom'
-import { ChipStatus } from '../components/ChipStatus'
+import { ChipStatusReport } from '../components/ChipStatusReport'
 import { IReport } from '@interfaces/report'
+import { EyeIcon } from 'lucide-react'
+import { Role } from '@interfaces/user'
 
 const columnHelper = createColumnHelper<IReport>()
 
-export const columnsReport = (
-  setDataSelectedFile: (data: string | undefined) => void,
-  setDataSelected: (data: IReport) => void,
-  openModalFile: () => void,
-  openModalDelete: () => void
-) => [
+export const columnsReport = (setDataSelected: (data: IReport) => void, openModalDelete: () => void, role: Role) => [
   {
     header: 'ID',
     id: 'index',
@@ -54,7 +51,7 @@ export const columnsReport = (
   },
   columnHelper.accessor('status', {
     header: 'Estado',
-    cell: (info) => <ChipStatus status={info.getValue()!} />
+    cell: (info) => <ChipStatusReport status={info.getValue()!} />
   }),
 
   {
@@ -74,14 +71,26 @@ export const columnsReport = (
         navigate(`/edit-report/${data?._id}`)
       }
 
+      const handleDetail = () => {
+        navigate(`/report/${data?._id}`)
+      }
+
       return (
         <div className="flex gap-5">
-          <IconButton onClick={handleModalEdit}>
-            <IconEdit className="text-primary-600" />
+          <IconButton onClick={handleDetail}>
+            <EyeIcon className="text-primary-600" />
           </IconButton>
-          <IconButton onClick={handleModalDelete}>
-            <IconTrash className="text-primary-600" />
-          </IconButton>
+
+          {role === 'SUBMITTER' && (
+            <>
+              <IconButton onClick={handleModalEdit}>
+                <IconEdit className="text-primary-600" />
+              </IconButton>
+              <IconButton onClick={handleModalDelete}>
+                <IconTrash className="text-primary-600" />
+              </IconButton>
+            </>
+          )}
         </div>
       )
     }

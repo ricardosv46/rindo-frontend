@@ -1,10 +1,15 @@
-// import { columnsExpenses, ModalCreateExpenses, ModalUpdateExpenses } from '@components/corporation'
-import { Card, FileUpload, Modal, Show, Spinner } from '@components/shared'
+import { columnsArea, ModalCreateArea, ModalUpdateArea } from '@components/corporation'
+import { Show, Spinner } from '@components/shared'
+import { useDebounce } from '@hooks/useDebounce'
 import { useToggle } from '@hooks/useToggle'
-import { IExpense } from '@interfaces/expense'
+import { IArea } from '@interfaces/area'
 import {
   Fab,
+  FormControl,
   InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -15,74 +20,65 @@ import {
   TextField,
   Tooltip
 } from '@mui/material'
-import { getExpenses } from '@services/expense'
+import { getAreas } from '@services/area'
+import { getCompanies } from '@services/company'
 import { useQuery } from '@tanstack/react-query'
 
-import { columnsExpense } from '@components/corporation/expenses/table/columnsExpense'
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { Plus, SearchIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
-import { FileUploadReadOnly } from '@components/shared/Files/FileUploadReadOnly'
-import { ModalDeleteExpense } from '@components/corporation/expenses/modals/ModalDeleteExpense'
 
-const PageExpensesSubmitter = () => {
-  const [isOpenModalFile, openModalFile, closeModalFile] = useToggle()
-  const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
-  const [dataSelected, setDataSelected] = useState<IExpense | null>(null)
-  const [dataSelectedFile, setDataSelectedFile] = useState<string | undefined>(undefined)
-  const [filteredExpenses, setFilteredExpenses] = useState<IExpense[]>([])
-  const navigate = useNavigate()
+const PageAreas = () => {
+  const [isOpenModalUpdate, openModalUpdate, closeModalUpdate] = useToggle()
+  const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
+
+  const [dataSelected, setDataSelected] = useState<IArea | null>(null)
+  // const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
   const { watch, control } = useForm({
     defaultValues: {
-      search: ''
+      search: '',
+      company: 'all'
     }
   })
 
   const {
-    data: expenses = [],
-    isLoading: isLoadingExpenses,
-    isFetching: isFetchingExpenses,
+    data: areas = [],
+    isLoading: isLoadingAreas,
+    isFetching: isFetchingAreas,
     refetch
   } = useQuery({
-    queryKey: ['getExpenses'],
-    queryFn: getExpenses
+    queryKey: ['getAreas'],
+    queryFn: getAreas
   })
 
-  const { search } = watch()
+  const { data: companies = [], isLoading: isLoadingCompanies } = useQuery({
+    queryKey: ['getCompanies'],
+    queryFn: getCompanies
+  })
 
-  useEffect(() => {
-    if (isFetchingExpenses) return
+  const { search, company } = watch()
 
-    if (search === '') {
-      setFilteredExpenses(expenses)
-      return
-    }
+  const debouncedSearchTerm = useDebounce(search, 300)
 
-    const newData = expenses.filter((expense) => {
-      const searchMatch =
-        expense.description?.toLowerCase().includes(search.toLocaleLowerCase()) ||
-        expense.companyName?.toLowerCase().includes(search.toLocaleLowerCase())
-      return searchMatch
+  const filteredData = useMemo(() => {
+    return areas.filter((area) => {
+      const term = debouncedSearchTerm?.toLowerCase() ?? ''
+      const companyMatch = company === 'all' || area.company?._id === company
+      const searchMatch = area.name?.toLowerCase().includes(term) || area.company?.name?.toLowerCase().includes(term)
+      return companyMatch && searchMatch
     })
-
-    setFilteredExpenses(newData)
-  }, [search, isFetchingExpenses])
+  }, [areas, debouncedSearchTerm, company])
 
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
-    data: filteredExpenses,
-    columns: columnsExpense(setDataSelectedFile, setDataSelected, openModalFile, openModalDelete),
+    data: filteredData,
+    columns: columnsArea(setDataSelected, openModalUpdate, refetch),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel()
   })
 
-  const handleCreate = () => {
-    navigate('/create-expense')
-  }
-
   return (
-    <Show condition={isLoadingExpenses} loadingComponent={<Spinner />}>
+    <Show condition={isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
       <div className="flex justify-between">
         <div className="flex gap-5">
           <Controller
@@ -107,7 +103,7 @@ const PageExpensesSubmitter = () => {
             )}
           />
 
-          {/* <FormControl sx={{ minWidth: 120 }} size="small">
+          <FormControl sx={{ minWidth: 120 }} size="small">
             <InputLabel id="select-company-label">Empresa</InputLabel>
             <Controller
               name="company"
@@ -123,7 +119,7 @@ const PageExpensesSubmitter = () => {
                     disablePortal: true
                   }}>
                   {companies.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
-                  {companies.length === 0 && <MenuItem value={''}>No existen Expensess en esa empresa</MenuItem>}
+                  {companies.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
                   {companies.map((i) => (
                     <MenuItem key={i._id} value={i._id}>
                       {i?.name}
@@ -132,15 +128,16 @@ const PageExpensesSubmitter = () => {
                 </Select>
               )}
             />
-          </FormControl> */}
+          </FormControl>
         </div>
 
-        <Tooltip title="Crear Gasto">
-          <Fab color="primary" onClick={handleCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
+        <Tooltip title="Crear Area">
+          <Fab color="primary" onClick={openModalCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
             <Plus className="w-5 h-5" />
           </Fab>
         </Tooltip>
       </div>
+
       <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
         <Table sx={{ minWidth: 750 }} aria-label="customized table">
           <TableHead>
@@ -178,21 +175,11 @@ const PageExpensesSubmitter = () => {
         onPageChange={(e, newPage) => setPageIndex(newPage)}
         onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
       />
-      <Modal isOpen={isOpenModalFile} onClose={closeModalFile}>
-        <Card className="w-[500px] max-h-[95vh] overflow-hidden">
-          <FileUploadReadOnly value={dataSelectedFile} />
-        </Card>
-      </Modal>
 
-      <ModalDeleteExpense
-        {...{
-          isOpen: isOpenModalDelete,
-          onClose: closeModalDelete,
-          data: dataSelected
-        }}
-      />
+      <ModalCreateArea {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate, companies }} />
+      <ModalUpdateArea {...{ isOpen: isOpenModalUpdate, onClose: closeModalUpdate, data: dataSelected }} />
     </Show>
   )
 }
 
-export default PageExpensesSubmitter
+export default PageAreas

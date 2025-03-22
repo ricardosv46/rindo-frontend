@@ -5,7 +5,7 @@ import { Images } from '@icons/Images'
 import { Button } from '@mui/material'
 import { useState } from 'react'
 
-const PageCreateExpensesSubmitter = () => {
+const PageCreateExpenses = () => {
   const [expenseSelect, setExpenseSelect] = useState<'' | 'multiple' | 'single'>('')
 
   const multiple = () => {
@@ -48,4 +48,4 @@ const PageCreateExpensesSubmitter = () => {
   )
 }
 
-export default PageCreateExpensesSubmitter
+export default PageCreateExpenses

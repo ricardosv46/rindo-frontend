@@ -1,14 +1,11 @@
-import { EditStep } from '@components/corporation/expenses/steps/EditStep'
-import { ShowStep } from '@components/corporation/expenses/steps/ShowStep'
+import { EditStep } from '@components/corporation'
 import { Show, Spinner } from '@components/shared'
-import { useToggle } from '@hooks/useToggle'
 import { IExpense } from '@interfaces/expense'
 import { getExpense } from '@services/expense'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 
-const PageDetailExpenseSubmitter = () => {
+const PageEditExpenses = () => {
   const { id } = useParams()
 
   const {
@@ -23,9 +20,9 @@ const PageDetailExpenseSubmitter = () => {
 
   return (
     <Show condition={isFetchingExpense} loadingComponent={<Spinner />}>
-      <ShowStep data={expense} />
+      <EditStep data={expense} />
     </Show>
   )
 }
 
-export default PageDetailExpenseSubmitter
+export default PageEditExpenses

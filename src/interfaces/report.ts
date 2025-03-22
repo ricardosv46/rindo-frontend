@@ -17,3 +17,14 @@ export interface IReportRequest {
   name?: string
   expenses?: string[]
 }
+
+export interface IReportExpenses {
+  id?: string
+  _id?: string
+  name?: string
+  expenses?: IExpense[]
+  status?: ReportStatus
+  created?: string
+  area?: string
+  index?: number
+}

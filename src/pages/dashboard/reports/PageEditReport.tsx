@@ -1,5 +1,4 @@
-import { columnsExpense } from '@components/corporation/expenses/table/columnsExpense'
-import { columnsExpenseByReport } from '@components/corporation/expenses/table/columnsExpenseByReport'
+import { columnsExpenseByReport } from '@components/corporation'
 import { Card, Modal, Show, Spinner } from '@components/shared'
 import { FileUploadReadOnly } from '@components/shared/Files/FileUploadReadOnly'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,7 +7,6 @@ import { IExpense } from '@interfaces/expense'
 import { IReport } from '@interfaces/report'
 import {
   Button,
-  Divider,
   FormControl,
   FormHelperText,
   InputAdornment,
@@ -22,7 +20,7 @@ import {
   TextField
 } from '@mui/material'
 import { getExpenses } from '@services/expense'
-import { createReport, editReport, getReport } from '@services/report'
+import { editReport, getReport } from '@services/report'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { SearchIcon } from 'lucide-react'
@@ -44,7 +42,7 @@ export const validationSchema = z.object({
   expenses: z.array(z.string()).min(1, 'Debe seleccionar al menos un gasto.')
 })
 
-const PageEditReportSubmitter = () => {
+const PageEditReport = () => {
   const navigate = useNavigate()
   const [filteredExpenses, setFilteredExpenses] = useState<IExpense[]>([])
   const [dataSelectedFile, setDataSelectedFile] = useState<string | undefined>(undefined)
@@ -88,22 +86,6 @@ const PageEditReportSubmitter = () => {
     queryFn: getReportData,
     enabled: !!id
   })
-
-  //const {
-  //  mutate: mutateGetExpense,
-  //  isPending,
-  //  data: report = {} as IReport
-  //} = useMutation({
-  //  mutationFn: getReport,
-  //  onSuccess(data) {
-  //    setValue('name', data?.name!)
-  //    setValue('expenses', data?.expenses!)
-  //  }
-  //})
-
-  //useEffect(() => {
-  //  mutateGetExpense({ id: id! })
-  //}, [])
 
   const getExpensesDraft = async () => {
     try {
@@ -168,7 +150,14 @@ const PageEditReportSubmitter = () => {
 
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
     data: filteredExpenses,
-    columns: columnsExpenseByReport(setDataSelectedFile, openModalFile, expenses, handleSeletedForm, filteredExpenses),
+    columns: columnsExpenseByReport({
+      setDataSelectedFile,
+      openModalFile,
+      dataSelected: expenses,
+      setDataSelected: handleSeletedForm,
+      filteredExpenses,
+      selection: true
+    }),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel()
   })
@@ -274,4 +263,4 @@ const PageEditReportSubmitter = () => {
   )
 }
 
-export default PageEditReportSubmitter
+export default PageEditReport

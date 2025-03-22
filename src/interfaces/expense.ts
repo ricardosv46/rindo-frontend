@@ -1,4 +1,4 @@
-export type ExpenseStatus = 'IN_REPORT' | 'APPROVED' | 'DRAFT' | 'REJECTED' | 'IN_REVISION' | ''
+export type ExpenseStatus = 'IN_REPORT' | 'APPROVED' | 'DRAFT' | 'REJECTED' | 'IN_REVIEW' | ''
 
 export interface IExpense {
   id?: string
@@ -17,6 +17,20 @@ export interface IExpense {
   date?: string
   typeDocument?: string
   status?: ExpenseStatus
+  history?: IHistory[]
+}
+
+export interface IHistory {
+  description?: string
+  status?: ExpenseStatus
+  date?: string
+  comment?: string
+  order?: number
+  createdBy?: {
+    name?: string
+    email?: string
+    lastName?: string
+  }
 }
 
 export interface IExpenseRequest {
@@ -34,6 +48,9 @@ export interface IExpenseRequest {
   serie?: string
   date?: string
   typeDocument?: string
+  status?: ExpenseStatus
+  expenses?: string[]
+  comment?: string
 }
 
 export type Category =

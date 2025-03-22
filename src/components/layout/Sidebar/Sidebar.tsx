@@ -35,24 +35,26 @@ const SUBMITTER: MenuItem[] = [
 const APPROVER: MenuItem[] = [
   {
     icon: <Users className="w-4 h-4" />,
-    label: 'Aprobador',
-    url: '/to-review',
-    subItems: [
-      { icon: <Users className="w-4 h-4" />, label: 'Por Revisar', url: '/to-review' },
-      { icon: <Users className="w-4 h-4" />, label: 'Revisados', url: '/reviewed' }
-    ]
+    label: 'Por Revisar',
+    url: '/to-review'
+  },
+  {
+    icon: <Users className="w-4 h-4" />,
+    label: 'Revisados',
+    url: '/reviewed'
   }
 ]
 
 const GLOBAL_APPROVER: MenuItem[] = [
   {
     icon: <Users className="w-4 h-4" />,
-    label: 'Aprobador',
-    url: '/to-review',
-    subItems: [
-      { icon: <Users className="w-4 h-4" />, label: 'Por Revisar', url: '/to-review' },
-      { icon: <Users className="w-4 h-4" />, label: 'Revisados', url: '/reviewed' }
-    ]
+    label: 'Por Revisar',
+    url: '/to-review'
+  },
+  {
+    icon: <Users className="w-4 h-4" />,
+    label: 'Revisados',
+    url: '/reviewed'
   }
 ]
 
