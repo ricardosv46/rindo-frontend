@@ -59,7 +59,8 @@ export const EditStep = ({ data }: { data: IExpense }) => {
       file: fileChange ? props?.file : undefined,
       fileVisa: fileVisaChange ? props?.fileVisa : undefined,
       fileRxh: fileRxhChange ? props?.fileRxh : undefined,
-      id: data?._id
+      id: data?._id,
+      ...(data?.status === 'IN_REVIEW' && { status: data?.status })
     }
     mutateEdit(dataProps)
   }
@@ -98,7 +99,11 @@ export const EditStep = ({ data }: { data: IExpense }) => {
     onSuccess: async ({ message }) => {
       toast.success(message)
       queryClient.invalidateQueries({ queryKey: ['getExpenses'] })
-      navigate('/expenses')
+      if (data?.status === 'IN_REVIEW') {
+        navigate('/review')
+      } else {
+        navigate('/expenses')
+      }
     }
   })
 
@@ -153,7 +158,7 @@ export const EditStep = ({ data }: { data: IExpense }) => {
         <FormCreateExpense index={0} loading={loading} getDataOcr={getDataOcr} className="mt-5" />
         <div className={cn('flex justify-end mt-10', loading && 'opacity-50')}>
           <Button type="submit" variant="contained">
-            Actualizar Gasto
+            {data?.status === 'IN_REVIEW' ? 'Terminar Revisión' : 'Actualizar Gasto'}
           </Button>
         </div>
       </form>

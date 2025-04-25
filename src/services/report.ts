@@ -1,18 +1,19 @@
+import { IFilterResponse, IFormFilters } from '@interfaces/filters'
 import { apiService } from './axios/config'
 import { IReport, IReportExpenses, IReportRequest } from '@interfaces/report'
 
-export const getReports = async (): Promise<IReport[]> => {
+export const getReports = async (props: IFormFilters): Promise<IFilterResponse<IReport[]>> => {
   try {
-    const { data } = await apiService.get('/reports')
+    const { data } = await apiService.get('/reports', { params: props })
     return data?.data
   } catch (error: any) {
     throw error?.response?.data?.message
   }
 }
 
-export const getReportsApproved = async (): Promise<IReport[]> => {
+export const getReportsApproved = async (props: IFormFilters): Promise<IFilterResponse<IReport[]>> => {
   try {
-    const { data } = await apiService.get('/reports/approved')
+    const { data } = await apiService.get('/reports/approved', { params: props })
     return data?.data
   } catch (error: any) {
     throw error?.response?.data?.message
@@ -40,7 +41,7 @@ export const getReportExpenses = async ({ id }: { id: string }): Promise<IReport
 export const createReport = async (props: IReportRequest) => {
   try {
     const { data } = await apiService.post(`/reports/create`, props)
-    return data?.data
+    return data
   } catch (error: any) {
     throw error?.response?.data?.message
   }

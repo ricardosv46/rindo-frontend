@@ -32,7 +32,9 @@ export const DashboardRouter = () => {
 
         {/* CORPORATION */}
         {user?.role === 'CORPORATION' && <Route path="reports" element={<PageReports />} />}
+        {user?.role === 'CORPORATION' && <Route path="report/:id" element={<PageDetailReport />} />}
         {user?.role === 'CORPORATION' && <Route path="expenses" element={<PageExpenses />} />}
+        {user?.role === 'CORPORATION' && <Route path="expense/:id" element={<PageDetailExpense />} />}
         {user?.role === 'CORPORATION' && <Route path="users" element={<PageUsersCorporation />} />}
         {user?.role === 'CORPORATION' && <Route path="approvers" element={<PageApprovers />} />}
         {user?.role === 'CORPORATION' && <Route path="areas" element={<PageAreas />} />}
@@ -42,11 +44,13 @@ export const DashboardRouter = () => {
         {user?.role === 'SUBMITTER' && <Route path="expenses" element={<PageExpenses />} />}
         {user?.role === 'SUBMITTER' && <Route path="create-expense" element={<PageCreateExpenses />} />}
         {user?.role === 'SUBMITTER' && <Route path="edit-expense/:id" element={<PageEditExpenses />} />}
+        {user?.role === 'SUBMITTER' && <Route path="review-expense/:id" element={<PageEditExpenses />} />}
         {user?.role === 'SUBMITTER' && <Route path="expense/:id" element={<PageDetailExpense />} />}
         {user?.role === 'SUBMITTER' && <Route path="reports" element={<PageReports />} />}
         {user?.role === 'SUBMITTER' && <Route path="create-report" element={<PageCreateReport />} />}
         {user?.role === 'SUBMITTER' && <Route path="edit-report/:id" element={<PageEditReport />} />}
         {user?.role === 'SUBMITTER' && <Route path="report/:id" element={<PageDetailReport />} />}
+        {user?.role === 'SUBMITTER' && <Route path="review" element={<PageExpenses />} />}
 
         {/* APPROVER */}
         {user?.role === 'APPROVER' && <Route path="to-review" element={<PageReports />} />}

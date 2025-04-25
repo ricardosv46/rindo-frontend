@@ -1,27 +1,22 @@
+import { FormInput } from '@components/shared/Forms/FormInput'
+import { FormSearchInput } from '@components/shared/Forms/FormSearchInput'
+import { TablePagination } from '@components/shared/TablePagination/TablePagination'
 import { ChipStatusExpense, ChipStatusReport, columnsExpenseByReport, columnsExpenseByReportReadOnly } from '@components/corporation'
 import { ChipIcon } from '@components/corporation/expenses/components/ChipIcon'
 import { Card, Modal, Show, Spinner } from '@components/shared'
 import { FileUploadReadOnly } from '@components/shared/Files/FileUploadReadOnly'
+import { Button } from '@components/ui/button'
+import { Divider } from '@components/ui/divider'
+import { ScrollArea } from '@components/ui/scroll-area'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@components/ui/table'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useDebounce } from '@hooks/useDebounce'
 import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
-import { IHistory } from '@interfaces/expense'
+import { IExpense, IHistory } from '@interfaces/expense'
 import { IReportExpenses } from '@interfaces/report'
 import { formatNumber } from '@lib/utils'
-import {
-  Button,
-  Divider,
-  InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField
-} from '@mui/material'
+
 import { getArea } from '@services/area'
 import { editExpenseStatus } from '@services/expense'
 import { editReportApprove, editReportSendProgress, getReportExpenses } from '@services/report'
@@ -29,12 +24,13 @@ import { useAuth } from '@store/auth'
 import { IconFileExcel } from '@tabler/icons-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
-import { SearchIcon, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Plus, SearchIcon, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
+import { IFormFilters } from '../../../interfaces/filters'
 
 export interface IFormReport {
   search: string
@@ -53,6 +49,7 @@ export const validationSchema = z.object({
 const PageDetailReport = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [filteredData, setFilteredData] = useState<IExpense[]>([])
   const [dataSelectedFile, setDataSelectedFile] = useState<string | undefined>(undefined)
   const [dataSelectedHistory, setDataSelectedHistory] = useState<IHistory[]>([])
   const [isOpenModalFile, openModalFile, closeModalFile] = useToggle()
@@ -119,8 +116,8 @@ const PageDetailReport = () => {
     },
     onSuccess: async ({ message }) => {
       toast.success(message)
-      queryClient.invalidateQueries({ queryKey: ['getReports'] })
-      navigate('/reports')
+      queryClient.invalidateQueries({ queryKey: ['getReportExpenses'] })
+      // navigate('/reports')
     }
   })
 
@@ -131,8 +128,9 @@ const PageDetailReport = () => {
     },
     onSuccess: async ({ message }) => {
       toast.success(message)
-      queryClient.invalidateQueries({ queryKey: ['getReports'] })
-      navigate('/reports')
+      queryClient.invalidateQueries({ queryKey: ['getReportExpenses'] })
+
+      // navigate('/reports')
     }
   })
 
@@ -159,16 +157,29 @@ const PageDetailReport = () => {
     }
   }
 
-  const debouncedSearchTerm = useDebounce(search, 300)
+  const onSubmitFilter = () => {
+    setFilteredData(expensesFiltered())
+  }
 
-  const filteredData = useMemo(() => {
+  const onClearFilter = () => {
+    setFilteredData(report?.expenses || [])
+    setValue('search', '')
+  }
+
+  // const debouncedSearchTerm = useDebounce(search, 300)
+
+  const expensesFiltered = () => {
     if (!report?.expenses) return []
     return report?.expenses?.filter((expense) => {
-      const term = debouncedSearchTerm?.toLowerCase() ?? ''
+      const term = search?.toLowerCase() ?? ''
       const searchMatch = expense.description?.toLowerCase().includes(term) || expense.companyName?.toLowerCase().includes(term)
       return searchMatch
     })
-  }, [report?.expenses, search, debouncedSearchTerm])
+  }
+
+  useEffect(() => {
+    setFilteredData(report?.expenses || [])
+  }, [report?.expenses])
 
   const handleSeletedForm = (expenses: string[]) => {
     setValue('expenses', expenses, { shouldValidate: true })
@@ -178,22 +189,23 @@ const PageDetailReport = () => {
     return (user?.role === 'GLOBAL_APPROVER' || user?.role === 'APPROVER') && isVisibleButton
   }, [user?.role, isVisibleButton])
 
-  const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
-    data: filteredData,
-    columns: columnsExpenseByReport({
-      setDataSelectedFile,
-      openModalFile,
-      dataSelected: expenses,
-      setDataSelected: handleSeletedForm,
-      filteredExpenses: filteredData,
-      selection: validateSelection,
-      history: true,
-      setDataSelectedHistory,
-      openModalHistory
-    }),
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel()
-  })
+  const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, firstPage, lastPage, nextPage, previousPage, getPageCount } =
+    useReactTable({
+      data: filteredData,
+      columns: columnsExpenseByReport({
+        setDataSelectedFile,
+        openModalFile,
+        dataSelected: expenses,
+        setDataSelected: handleSeletedForm,
+        filteredExpenses: filteredData,
+        selection: validateSelection,
+        history: true,
+        setDataSelectedHistory,
+        openModalHistory
+      }),
+      getCoreRowModel: getCoreRowModel(),
+      getPaginationRowModel: getPaginationRowModel()
+    })
 
   const calculateTotals = () => {
     const totals = report?.expenses?.reduce(
@@ -270,115 +282,113 @@ const PageDetailReport = () => {
     return !report.expenses.every((exp) => exp.status === 'APPROVED' || exp.status === 'REJECTED')
   }, [report?.status, report?.expenses])
 
+  const handleChangePageSize = (value: string) => {
+    setPageSize(Number(value))
+  }
+
   return (
     <Show condition={isFetchingReport} loadingComponent={<Spinner />}>
-      <form className="flex flex-col gap-5 py-2">
-        <div className="">
-          <div className="flex justify-between ">
-            <p className="text-lg font-bold ">{report?.name}</p>
-            <Button className="" type="button" variant="contained" color="success" startIcon={<IconFileExcel />}>
-              Descargar reporte
-            </Button>
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">Reporte</h2>
+            <h2 className="font-semibold text-gray-800 ">Descripción: {report?.name}</h2>
           </div>
+
           <ChipStatusReport status={report?.status!} />
-          <p className="my-5 ">Detalle de gastos ({report?.expenses?.length})</p>
-          <div className="flex justify-between pb-5">
-            <Controller
-              name="search"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  placeholder="Buscar"
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon fontSize="small" />
-                        </InputAdornment>
-                      )
-                    }
-                  }}
-                />
-              )}
-            />
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmitFilter)} className="flex flex-col justify-between gap-3 sm:flex-row">
+          <div className="flex flex-col gap-2">
+            <h2 className="font-semibold text-gray-800 ">Detalle de gastos</h2>
+            <div className="flex items-center gap-2">
+              <FormSearchInput name="search" control={control} placeholder="Buscar" />
+              {/* <FormDatePickerWithRange control={control} name="dateRange" /> */}
+              <Button type="submit" className="w-24 gap-1">
+                <span>Filtrar</span>
+              </Button>
+              <Button className="w-24 gap-1" color="red" type="button" onClick={onClearFilter}>
+                <span>Limpiar</span>
+              </Button>
+            </div>
+          </div>
+          {report?.status === 'IN_PROCESS' && (
             <div className="flex gap-2">
-              <Button variant="contained" disabled={disabledButtonApprove} color="success" onClick={handleApproveExpenses}>
+              <Button disabled={disabledButtonApprove} color="green" onClick={handleApproveExpenses}>
                 Aprobar
               </Button>
-              <Button variant="contained" disabled={disabledButtonReject} color="error" onClick={handleModalRejectExpenses}>
+              <Button disabled={disabledButtonReject} color="red" onClick={handleModalRejectExpenses}>
                 Rechazar
               </Button>
-              <Button variant="contained" disabled={disabledButtonReview} color="warning" onClick={handleModalReviewExpenses}>
+              <Button disabled={disabledButtonReview} color="orange" onClick={handleModalReviewExpenses}>
                 Revisar
               </Button>
             </div>
-          </div>
-
-          <TableContainer>
-            <Table sx={{ minWidth: 750 }} aria-label="customized table">
-              <TableHead>
-                {getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableCell key={header.id} component="th">
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHead>
-              <TableBody>
-                {getRowModel().rows?.map((row) => (
-                  <TableRow hover key={row.id} selected={expenses?.some((i) => i === row.getVisibleCells()[0].row.original._id)}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} component="td" scope="row">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            labelRowsPerPage="Filas por página:"
-            labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-            rowsPerPageOptions={[3, 5, 10]}
-            component="div"
-            count={getRowCount()}
-            rowsPerPage={getState().pagination.pageSize}
-            page={getState().pagination.pageIndex}
-            onPageChange={(e, newPage) => setPageIndex(newPage)}
-            onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
-          />
-          <div className="flex justify-end px-40 py-5 my-5 bg-blue-300 rounded-lg shadow-lg">
-            <div className="grid w-2/12 grid-cols-2 font-medium text-primary-600">
-              <div className="flex flex-col gap-2">
-                <p>Total PEN:</p>
-                <p>Total USD:</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <p>{formatNumber(String(totals?.pen))}</p>
-                <p>{formatNumber(String(totals?.usd))}</p>
-              </div>
-            </div>
-          </div>
-          {(report?.status === 'DRAFT' || (report?.status === 'IN_PROCESS' && isVisibleButton)) && (
-            <div className="flex flex-col items-end gap-3 mt-2">
-              <Button
-                className=""
-                type="button"
-                variant="contained"
-                disabled={isPendingSendProgress || isPendingApprove || disabledButtonFinish}
-                onClick={handleContinue}>
-                {report?.status === 'DRAFT' ? 'Enviar a revisión' : 'Finalizar revisión'}
-              </Button>
-            </div>
           )}
+        </form>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-gray-50 hover:bg-gray-50">
+            {getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+
+          <TableBody className="hover:bg-gray-50">
+            {getRowModel().rows?.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell className="font-medium" key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <TablePagination
+        total={getRowCount()}
+        pageIndex={getState().pagination.pageIndex + 1}
+        totalPages={getPageCount()}
+        pageSize={String(getState().pagination.pageSize)}
+        onChangePageSize={handleChangePageSize}
+        onFirst={firstPage}
+        onPrevious={previousPage}
+        onNext={nextPage}
+        onLast={lastPage}
+      />
+
+      <div className="flex justify-end gap-3 px-40 py-5 my-5 font-medium bg-blue-300 rounded-lg shadow-lg text-primary-600">
+        <div className="flex flex-col gap-2">
+          <p>Total PEN: </p>
+          <p>Total USD: </p>
         </div>
-      </form>
+        <div className="flex flex-col gap-2">
+          <p>{formatNumber(String(totals?.pen))}</p>
+          <p>{formatNumber(String(totals?.usd))}</p>
+        </div>
+      </div>
+      {(report?.status === 'DRAFT' || (report?.status === 'IN_PROCESS' && isVisibleButton)) && (
+        <div className="flex flex-col items-end gap-3 mt-2">
+          <Button
+            className=""
+            type="button"
+            disabled={isPendingSendProgress || isPendingApprove || disabledButtonFinish}
+            onClick={handleContinue}>
+            {report?.status === 'DRAFT' ? 'Enviar a revisión' : 'Finalizar revisión'}
+          </Button>
+        </div>
+      )}
 
       <Modal isOpen={isOpenModalFile} onClose={closeModalFile}>
         <Card className="w-[500px] max-h-[95vh] overflow-hidden">
@@ -386,55 +396,42 @@ const PageDetailReport = () => {
         </Card>
       </Modal>
       <Modal isOpen={isOpenModalHistory} onClose={closeModalHistory}>
-        <Card className="w-[500px] max-h-[95vh] overflow-hidden">
+        <Card className="w-[500px] ">
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-xl font-semibold">Historial</h2>
           </div>
-
-          <div className="flex flex-col gap-10 p-5">
-            {dataSelectedHistory?.map((history) => (
-              <div className="flex gap-5">
-                <div className="flex flex-col justify-center gap-1 text-center">
-                  <p>{history?.description}</p>
-                  <p>{history.date}</p>
+          <ScrollArea className="h-[500px]">
+            <div className="flex flex-col gap-10 p-5">
+              {dataSelectedHistory?.map((history) => (
+                <div className="flex gap-5">
+                  <div className="flex flex-col justify-center gap-1 text-center">
+                    <p>{history?.description}</p>
+                    <p>{history.date}</p>
+                  </div>
+                  <ChipIcon status={history.status as 'APPROVED' | 'REJECTED' | 'IN_REVIEW' | 'IN_REPORT'} />
+                  <div className="flex flex-col gap-2">
+                    <ChipStatusExpense status={history.status!} />
+                    <p>{history.comment}</p>
+                    <p>
+                      {history.createdBy?.name} {history.createdBy?.lastName}
+                    </p>
+                    <p>{history.createdBy?.email}</p>
+                  </div>
                 </div>
-                <ChipIcon status={history.status as 'APPROVED' | 'REJECTED' | 'IN_REVIEW'} />
-                <div className="flex flex-col gap-2">
-                  <ChipStatusExpense status={history.status!} />
-                  <p>{history.comment}</p>
-                  <p>
-                    {history.createdBy?.name} {history.createdBy?.lastName}
-                  </p>
-                  <p>{history.createdBy?.email}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         </Card>
       </Modal>
       <Modal isOpen={isOpenModalComment} onClose={closeModalComment}>
         <Card className="w-[400px] max-h-[95vh] overflow-hidden">
           <p className="pb-6">{title} gasto</p>
-          <Divider sx={{ width: 'calc(100% + 48px)', marginX: '-24px', mb: 4 }} />
+          <Divider className="w-[calc(100%+48px)] -mx-6 mb-4" />
           <form onSubmit={handleSubmit(onSubmitModal)} className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto">
-            <Controller
-              name="comment"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  color="primary"
-                  type="text"
-                  label="Comentario"
-                  size="small"
-                  error={!!errors.comment}
-                  helperText={errors.comment?.message}
-                />
-              )}
-            />
+            <FormInput name="comment" control={control} placeholder="Comentario" />
 
             <Divider />
-            <Button type="submit" variant="contained" disabled={isPendingStatus}>
+            <Button type="submit" disabled={isPendingStatus}>
               {title}
             </Button>
           </form>

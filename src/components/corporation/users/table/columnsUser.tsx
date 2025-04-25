@@ -1,13 +1,14 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import { IUser } from '@interfaces/user'
-import { Chip } from '@components/shared'
+import { Chip, CustomTooltip } from '@components/shared'
 import { IconButton } from '@mui/material'
 import { IconTrash, IconEdit } from '@tabler/icons-react'
-import { EyeIcon } from 'lucide-react'
+import { Edit, Eye, EyeIcon, Trash } from 'lucide-react'
 import { useToggle } from '@hooks/useToggle'
 import { useEffect, useRef } from 'react'
-import { ROLES } from '@/lib/utils'
+import { cn, ROLES } from '@/lib/utils'
 import { IArea } from '@interfaces/area'
+import { Button } from '@components/ui/button'
 
 const columnHelper = createColumnHelper<IUser>()
 
@@ -78,9 +79,11 @@ export const columnsUser = (
         <div className="relative flex items-center gap-1" ref={dropdownRef}>
           {name}
           {data?.role === 'APPROVER' && name === '' && (
-            <IconButton onClick={openModalAreas}>
-              <EyeIcon className="text-primary-600" />
-            </IconButton>
+            <CustomTooltip title="Ver Areas">
+              <Button variant="ghost" size="icon" className="rounded-full" onClick={openModalAreas}>
+                <Eye className={cn('text-primary-600')} />
+              </Button>
+            </CustomTooltip>
           )}
 
           <div
@@ -135,12 +138,16 @@ export const columnsUser = (
 
       return (
         <div className="flex gap-5">
-          <IconButton onClick={handleUpdate}>
-            <IconEdit className="text-primary-600" />
-          </IconButton>
-          <IconButton onClick={handleDelete}>
-            <IconTrash className="text-primary-600" />
-          </IconButton>
+          <CustomTooltip title="Editar">
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={handleUpdate}>
+              <Edit className={cn('text-primary-600')} />
+            </Button>
+          </CustomTooltip>
+          <CustomTooltip title="Eliminar">
+            <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={handleDelete}>
+              <Trash className={cn('text-red-600')} />
+            </Button>
+          </CustomTooltip>
         </div>
       )
     }

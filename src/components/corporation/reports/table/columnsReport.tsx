@@ -1,13 +1,15 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import { IExpense } from '@interfaces/expense'
 import { IconButton } from '@mui/material'
-import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react'
-import { formatNumber } from '@lib/utils'
+import { IconEdit, IconEye, IconEyeOff, IconTrash } from '@tabler/icons-react'
+import { cn, formatNumber } from '@lib/utils'
 import { useNavigate } from 'react-router-dom'
 import { ChipStatusReport } from '../components/ChipStatusReport'
 import { IReport } from '@interfaces/report'
-import { EyeIcon } from 'lucide-react'
+import { Edit, Eye, EyeIcon, EyeOff, Trash } from 'lucide-react'
 import { Role } from '@interfaces/user'
+import { CustomTooltip } from '@components/shared/CustomTooltip/CustomTooltip'
+import { Button } from '@components/ui/button'
 
 const columnHelper = createColumnHelper<IReport>()
 
@@ -18,7 +20,7 @@ export const columnsReport = (setDataSelected: (data: IReport) => void, openModa
     cell: (info: any) => info.row.index + 1
   },
   columnHelper.accessor('name', {
-    header: 'Ruc',
+    header: 'Descripción',
     cell: (info) => info.getValue()
   }),
   columnHelper.accessor('created', {
@@ -75,20 +77,27 @@ export const columnsReport = (setDataSelected: (data: IReport) => void, openModa
         navigate(`/report/${data?._id}`)
       }
 
+      const disabled = data?.status !== 'DRAFT'
       return (
         <div className="flex gap-5">
-          <IconButton onClick={handleDetail}>
-            <EyeIcon className="text-primary-600" />
-          </IconButton>
+          <CustomTooltip title="Ver Detalle">
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={handleDetail}>
+              <Eye className="text-primary-600" />
+            </Button>
+          </CustomTooltip>
 
           {role === 'SUBMITTER' && (
             <>
-              <IconButton onClick={handleModalEdit}>
-                <IconEdit className="text-primary-600" />
-              </IconButton>
-              <IconButton onClick={handleModalDelete}>
-                <IconTrash className="text-primary-600" />
-              </IconButton>
+              <CustomTooltip title="Editar">
+                <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleModalEdit}>
+                  <Edit className={cn(disabled ? 'disabled:text-gray-600' : 'text-primary-600')} />
+                </Button>
+              </CustomTooltip>
+              <CustomTooltip title="Eliminar">
+                <Button variant="ghost" size="icon" disabled={disabled} className="w-8 h-8 rounded-full" onClick={handleModalDelete}>
+                  <Trash className={cn(disabled ? 'disabled:text-gray-600' : 'text-red-600')} />
+                </Button>
+              </CustomTooltip>
             </>
           )}
         </div>

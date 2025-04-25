@@ -1,20 +1,8 @@
 // import { columnsReports, ModalCreateReports, ModalUpdateReports } from '@components/corporation'
 import { Card, Modal, Show, Spinner } from '@components/shared'
 import { useToggle } from '@hooks/useToggle'
-import {
-  Fab,
-  InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Tooltip
-} from '@mui/material'
-import { useQuery } from '@tanstack/react-query'
+
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { ModalDeleteReport } from '@components/corporation/reports/modals/ModalDeleteReport'
 import { columnsReport } from '@components/corporation/reports/table/columnsReport'
@@ -28,6 +16,12 @@ import { Controller, useForm } from 'react-hook-form'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@store/auth'
 import { Role } from '@interfaces/user'
+import { IFilterResponse, IFormFilters } from '@interfaces/filters'
+import { Button } from '@components/ui/button'
+import { FormSearchInput } from '@components/shared/Forms/FormSearchInput'
+import { IconFileExcel } from '@tabler/icons-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@components/ui/table'
+import { TablePagination } from '@components/shared/TablePagination/TablePagination'
 
 const PageReports = () => {
   const { user } = useAuth()
@@ -38,19 +32,30 @@ const PageReports = () => {
   const [filteredReports, setFilteredReports] = useState<IReport[]>([])
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { watch, control } = useForm({
-    defaultValues: {
-      search: ''
-    }
+
+  const initialValues: IFormFilters = {
+    search: '',
+    pageSize: '10',
+    dateRange: null,
+    pageIndex: 1
+  }
+  const {
+    watch: watchFilter,
+    control: controlFilter,
+    handleSubmit: handleSubmitFilter,
+    reset: resetFilter,
+    setValue: setValueFilter
+  } = useForm<IFormFilters>({
+    defaultValues: initialValues
   })
 
-  const getReportsData = async () => {
+  const getReportsData = async (props: IFormFilters) => {
     try {
       if (pathname.includes('reviewed')) {
-        const data = await getReportsApproved()
+        const data = await getReportsApproved(props)
         return data
       }
-      const data = await getReports()
+      const data = await getReports(props)
       return data
     } catch (error) {
       throw error
@@ -58,124 +63,127 @@ const PageReports = () => {
   }
 
   const {
-    data: reports = [],
-    isLoading: isLoadingReports,
-    isFetching: isFetchingReports,
-    refetch
-  } = useQuery({
-    queryKey: ['getReports', pathname],
-    queryFn: getReportsData
+    data: dataReports,
+    isPending: isLoadingReports,
+    mutate: mutateExpenses
+  } = useMutation<IFilterResponse<IReport[]>, Error, IFormFilters>({
+    mutationFn: getReportsData,
+    mutationKey: ['getReports']
   })
 
-  const { search } = watch()
-
-  useEffect(() => {
-    if (isFetchingReports) return
-
-    if (search === '') {
-      setFilteredReports(reports)
-      return
-    }
-
-    const newData = reports.filter((expense) => {
-      const searchMatch = expense.name?.toLowerCase().includes(search.toLocaleLowerCase())
-      return searchMatch
-    })
-
-    setFilteredReports(newData)
-  }, [search, isFetchingReports])
+  const { search, pageSize, dateRange, pageIndex } = watchFilter()
 
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
-    data: filteredReports,
+    data: dataReports?.data ?? [],
     columns: columnsReport(setDataSelected, openModalDelete, user?.role as Role),
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel()
+    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true
   })
+
+  useEffect(() => {
+    // Si cambia pageSize, reseteamos a la primera página
+    if (pageSize !== initialValues.pageSize) {
+      setValueFilter('pageIndex', 1)
+    }
+
+    mutateExpenses({
+      search,
+      pageSize,
+      dateRange,
+      pageIndex: pageSize !== initialValues.pageSize ? 1 : pageIndex
+    })
+  }, [pageSize, pageIndex, pathname])
 
   const handleCreate = () => {
     navigate('/create-report')
   }
 
+  const handleReset = () => {
+    resetFilter()
+    mutateExpenses(initialValues)
+  }
+
+  const onSubmit = (data: IFormFilters) => {
+    mutateExpenses(data)
+  }
+
+  const handleDownload = () => {
+    console.log('download')
+  }
+
+  const handleChangePageSize = (value: string) => {
+    setValueFilter('pageSize', value)
+  }
+
+  const handleFirst = () => {
+    setValueFilter('pageIndex', 1)
+  }
+
+  const handlePrevious = () => {
+    setValueFilter('pageIndex', pageIndex - 1)
+  }
+
+  const handleNext = () => {
+    setValueFilter('pageIndex', pageIndex + 1)
+  }
+
+  const handleLast = () => {
+    setValueFilter('pageIndex', dataReports?.pagination.totalPages ?? 1)
+  }
+
   return (
     <Show condition={isLoadingReports} loadingComponent={<Spinner />}>
-      <div className="flex justify-between">
-        <div className="flex gap-5">
-          <Controller
-            name="search"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                size="small"
-                sx={{ pb: 3 }}
-                placeholder="Buscar"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    )
-                  }
-                }}
-              />
-            )}
-          />
-
-          {/* <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-company-label">Empresa</InputLabel>
-            <Controller
-              name="company"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="select-company-label"
-                  id="select-company"
-                  label="Empresa"
-                  defaultValue="all"
-                  MenuProps={{
-                    disablePortal: true
-                  }}>
-                  {companies.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
-                  {companies.length === 0 && <MenuItem value={''}>No existen Reportss en esa empresa</MenuItem>}
-                  {companies.map((i) => (
-                    <MenuItem key={i._id} value={i._id}>
-                      {i?.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormControl> */}
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-800">Reportes</h2>
+          {user?.role === 'SUBMITTER' && (
+            <Button type="button" className="gap-1" onClick={handleCreate}>
+              <Plus className="w-4 h-4" />
+              <span>Nuevo Reporte</span>
+            </Button>
+          )}
         </div>
 
-        {user?.role === 'SUBMITTER' && (
-          <Tooltip title="Crear Gasto">
-            <Fab color="primary" onClick={handleCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
-              <Plus className="w-5 h-5" />
-            </Fab>
-          </Tooltip>
-        )}
+        <form onSubmit={handleSubmitFilter(onSubmit)} className="flex flex-col justify-between gap-3 sm:flex-row">
+          <div className="flex items-center gap-2">
+            <FormSearchInput name="search" control={controlFilter} placeholder="Buscar" />
+            {/* <FormDatePickerWithRange control={control} name="dateRange" /> */}
+            <Button type="submit" className="w-24 gap-1">
+              <span>Filtrar</span>
+            </Button>
+            <Button className="w-24 gap-1" color="red" type="button" onClick={handleReset}>
+              <span>Limpiar</span>
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" color="green" className="gap-1" onClick={handleDownload}>
+              <IconFileExcel className="w-4 h-4" />
+              Descargar Reporte
+            </Button>
+          </div>
+        </form>
       </div>
-      <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
-        <Table sx={{ minWidth: 750 }} aria-label="customized table">
-          <TableHead>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-gray-50 hover:bg-gray-50">
             {getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableCell key={header.id} component="th">
+                  <TableHead key={header.id}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableCell>
+                  </TableHead>
                 ))}
               </TableRow>
             ))}
-          </TableHead>
-          <TableBody>
+          </TableHeader>
+
+          <TableBody className="hover:bg-gray-50">
             {getRowModel().rows?.map((row) => (
-              <TableRow hover key={row.id}>
+              <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} component="td" scope="row">
+                  <TableCell className="font-medium" key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -183,18 +191,20 @@ const PageReports = () => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
+      </div>
+
       <TablePagination
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-        rowsPerPageOptions={[3, 5, 10]}
-        component="div"
-        count={getRowCount()}
-        rowsPerPage={getState().pagination.pageSize}
-        page={getState().pagination.pageIndex}
-        onPageChange={(e, newPage) => setPageIndex(newPage)}
-        onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
+        total={dataReports?.pagination?.total ?? 0}
+        pageIndex={pageIndex}
+        totalPages={dataReports?.pagination.totalPages ?? 1}
+        pageSize={pageSize}
+        onChangePageSize={handleChangePageSize}
+        onFirst={handleFirst}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        onLast={handleLast}
       />
+
       <Modal isOpen={isOpenModalFile} onClose={closeModalFile}>
         <Card className="w-[500px] max-h-[95vh] overflow-hidden">
           <FileUploadReadOnly value={dataSelectedFile} />

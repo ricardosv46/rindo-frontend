@@ -38,9 +38,11 @@ const PageCreateExpenses = () => {
           </button>
         </div>
       )}
-      <Button onClick={reset} className="pb-5">
-        Atras
-      </Button>
+      {expenseSelect !== '' && (
+        <Button onClick={reset} className="pb-5">
+          Atras
+        </Button>
+      )}
 
       {expenseSelect === 'multiple' && <MultipleStep />}
       {expenseSelect === 'single' && <SingleStep />}

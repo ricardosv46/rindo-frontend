@@ -1,3 +1,6 @@
+import { FormInput, FormSelect } from '@components/shared'
+import { FormMultiSelect } from '@components/shared/Forms/FormMultiSelect'
+import { Option } from '@components/shared/Forms/FormSelect'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
@@ -19,7 +22,7 @@ import {
 import { createGlobalApprover, createUser } from '@services/user'
 import { IconEye, IconEyeOff } from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import * as yup from 'yup'
@@ -69,6 +72,13 @@ interface FormCreateUserProps {
   companies: ICompany[]
   areas: IArea[]
 }
+
+const roles = [
+  { label: 'RENDIDOR', value: 'SUBMITTER' },
+  { label: 'APROBADOR', value: 'APPROVER' },
+  { label: 'APROBADOR GLOBAL', value: 'GLOBAL_APPROVER' }
+]
+
 export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProps) => {
   const [isOpenPassword, , , togglePassword] = useToggle()
   const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
@@ -141,148 +151,37 @@ export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProp
     }
   }, [watch()?.role])
 
+  const valuesCompanies: Option[] = useMemo(() => {
+    if (companies.length > 0) {
+      const data = companies.map((i) => ({ label: i.name, value: i._id }))
+      return data as Option[]
+    } else {
+      return [{ label: 'No existen empresas', value: '' }]
+    }
+  }, [companies])
+
+  const valuesAreas: Option[] = useMemo(() => {
+    if (filteredAreas.length > 0) {
+      const data = filteredAreas.map((i) => ({ label: i.name, value: i._id }))
+      return data as Option[]
+    } else {
+      return [{ label: 'No existen areas en esa empresa', value: '' }]
+    }
+  }, [filteredAreas])
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
       data-radix-scroll-area-viewport
-      className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto">
-      <Controller
-        name="email"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Correo"
-            size="small"
-            error={!!errors.email}
-            helperText={errors.email?.message}
-          />
-        )}
-      />
-      <Controller
-        name="name"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Nombre"
-            size="small"
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-        )}
-      />
-      <Controller
-        name="lastname"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Apellido"
-            size="small"
-            error={!!errors.lastname}
-            helperText={errors.lastname?.message}
-          />
-        )}
-      />
-      <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.role}>
-        <InputLabel id="select-company-label">Rol</InputLabel>
-        <Controller
-          name="role"
-          control={control}
-          render={({ field }) => (
-            <Select
-              {...field}
-              labelId="select-company-label"
-              id="select-company"
-              label="Rol"
-              defaultValue=""
-              MenuProps={{
-                disablePortal: true
-              }}>
-              <MenuItem value={'SUBMITTER'}>RENDIDOR</MenuItem>
-              <MenuItem value={'APPROVER'}>APROBADOR</MenuItem>
-              <MenuItem value={'GLOBAL_APPROVER'}>APROBADOR GLOBAL</MenuItem>
-            </Select>
-          )}
-        />
-        {errors.company && <FormHelperText>{errors.company.message}</FormHelperText>}
-      </FormControl>
+      className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto overflow-x-visible">
+      <FormInput control={control} name="email" label="Correo" />
+      <FormInput control={control} name="name" label="Nombre" />
+      <FormInput control={control} name="lastname" label="Apellido" />
+      <FormSelect control={control} name="role" label="Rol" placeholder="Selecciona un rol" options={roles} />
       {watch()?.role !== 'GLOBAL_APPROVER' && (
-        <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.company}>
-          <InputLabel id="select-company-label">Empresa</InputLabel>
-          <Controller
-            name="company"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                labelId="select-company-label"
-                id="select-company"
-                label="Empresa"
-                defaultValue=""
-                MenuProps={{
-                  disablePortal: true
-                }}>
-                {companies.map((company) => (
-                  <MenuItem key={company._id} value={company._id}>
-                    {company.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
-          {errors.company && <FormHelperText>{errors.company.message}</FormHelperText>}
-        </FormControl>
+        <FormSelect control={control} name="company" label="Empresa" placeholder="Selecciona una empresa" options={valuesCompanies} />
       )}
       {watch()?.role === 'APPROVER' && (
-        <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.areas}>
-          <InputLabel id="select-area-label">Area</InputLabel>
-          <Controller
-            name="areas"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                labelId="select-area-label"
-                id="select-area"
-                label="Areas"
-                disabled={!watch()?.company}
-                multiple
-                value={field.value}
-                onChange={(event) => {
-                  const { value } = event.target
-                  field.onChange(typeof value === 'string' ? value.split(',') : value)
-                }}
-                renderValue={(selected) =>
-                  filteredAreas
-                    .filter((area) => selected.includes(area?._id ?? ''))
-                    .map((area) => area.name)
-                    .join(', ')
-                }
-                MenuProps={{
-                  disablePortal: true
-                }}>
-                {filteredAreas.length > 0 &&
-                  filteredAreas.map((area) => (
-                    <MenuItem key={area._id} value={area._id}>
-                      <Checkbox checked={field?.value?.includes(area?._id ?? '')} />
-                      <ListItemText primary={area.name} />
-                    </MenuItem>
-                  ))}
-
-                {filteredAreas.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
-              </Select>
-            )}
-          />
-          {errors.areas && <FormHelperText>{errors.areas.message}</FormHelperText>}
-        </FormControl>
+        <FormMultiSelect control={control} name="areas" label="Areas" placeholder="Selecciona una area" options={valuesAreas} />
       )}
       {watch()?.role === 'SUBMITTER' && (
         <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.areas}>

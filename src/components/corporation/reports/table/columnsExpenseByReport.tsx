@@ -1,10 +1,11 @@
+import { CustomTooltip } from '@components/shared/CustomTooltip/CustomTooltip'
 import { ChipStatusExpense } from '@components/corporation/expenses/components/ChipStatusExpense'
-import { IExpense } from '@interfaces/expense'
+import { Button } from '@components/ui/button'
+import { Checkbox } from '@components/ui/checkbox'
+import { IExpense, IHistory } from '@interfaces/expense'
 import { formatNumber } from '@lib/utils'
-import { Checkbox, IconButton } from '@mui/material'
-import { IconEye, IconEyeOff } from '@tabler/icons-react'
 import { createColumnHelper } from '@tanstack/react-table'
-import { IHistory } from '@interfaces/expense'
+import { Eye, EyeOff } from 'lucide-react'
 
 const columnHelper = createColumnHelper<IExpense>()
 
@@ -42,7 +43,7 @@ export const columnsExpenseByReport = ({
                 setDataSelected(filteredExpenses.map((i) => i._id!))
               }
             }
-            return <Checkbox checked={isAllSelected} onChange={handleSelectAll} />
+            return <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} />
           },
           id: 'selection',
           cell: (info: any) => {
@@ -55,7 +56,7 @@ export const columnsExpenseByReport = ({
                 setDataSelected([...dataSelected, data?._id])
               }
             }
-            return <Checkbox checked={isSelected} onChange={handleSelectionChange} />
+            return <Checkbox checked={isSelected} onCheckedChange={handleSelectionChange} />
           }
         }
       ]
@@ -110,16 +111,14 @@ export const columnsExpenseByReport = ({
         setDataSelectedFile(data?.file)
         openModalFile()
       }
-      if (!data?.file)
-        return (
-          <IconButton disabled>
-            <IconEyeOff className="text-gray-300" />
-          </IconButton>
-        )
+      const disabled = !data?.file
       return (
-        <IconButton onClick={handleShowFile}>
-          <IconEye className="text-primary-600" />
-        </IconButton>
+        <CustomTooltip title="Ver Comprobante">
+          <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleShowFile}>
+            {!disabled && <Eye className="text-primary-600" />}
+            {disabled && <EyeOff className="text-gray-600" />}
+          </Button>
+        </CustomTooltip>
       )
     }
   }),
@@ -132,16 +131,15 @@ export const columnsExpenseByReport = ({
         setDataSelectedFile(data?.fileVisa)
         openModalFile()
       }
-      if (!data?.fileVisa)
-        return (
-          <IconButton disabled>
-            <IconEyeOff className="text-gray-300" />
-          </IconButton>
-        )
+
+      const disabled = !data?.fileVisa
       return (
-        <IconButton onClick={handleShowFile}>
-          <IconEye className="text-primary-600" />
-        </IconButton>
+        <CustomTooltip title="Ver Cuenta">
+          <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleShowFile}>
+            {!disabled && <Eye className="text-primary-600" />}
+            {disabled && <EyeOff className="text-gray-600" />}
+          </Button>
+        </CustomTooltip>
       )
     }
   }),
@@ -155,17 +153,15 @@ export const columnsExpenseByReport = ({
         openModalFile()
       }
 
-      if (!data?.fileRxh)
-        return (
-          <IconButton disabled>
-            <IconEyeOff className="text-gray-300" />
-          </IconButton>
-        )
+      const disabled = !data?.fileRxh
 
       return (
-        <IconButton onClick={handleShowFile}>
-          <IconEye className="text-primary-600" />
-        </IconButton>
+        <CustomTooltip title="Ver Suspención">
+          <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleShowFile}>
+            {!disabled && <Eye className="text-primary-600" />}
+            {disabled && <EyeOff className="text-gray-600" />}
+          </Button>
+        </CustomTooltip>
       )
     }
   }),
@@ -181,17 +177,15 @@ export const columnsExpenseByReport = ({
               openModalHistory?.()
             }
 
-            if (data?.history.length === 0)
-              return (
-                <IconButton disabled>
-                  <IconEyeOff className="text-gray-300" />
-                </IconButton>
-              )
+            const disabled = data?.history.length === 0
 
             return (
-              <IconButton onClick={handleShowFile}>
-                <IconEye className="text-primary-600" />
-              </IconButton>
+              <CustomTooltip title="Ver Historial">
+                <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleShowFile}>
+                  {!disabled && <Eye className="text-primary-600" />}
+                  {disabled && <EyeOff className="text-gray-600" />}
+                </Button>
+              </CustomTooltip>
             )
           }
         }

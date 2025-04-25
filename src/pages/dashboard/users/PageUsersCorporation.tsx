@@ -1,39 +1,42 @@
 import { downloadFile } from '@/lib/utils'
 import { ModalCreateUser, ModalDeleteUser, ModalUpdateUser, columnsUser } from '@components/corporation'
-import { Show, Spinner } from '@components/shared'
+import { MenuItem } from '@components/layout/Sidebar/Sidebar'
+import { FormSearchInput, FormSelect, Show, Spinner, TablePagination } from '@components/shared'
+import { Option } from '@components/shared/Forms/FormSelect'
+import { Button } from '@components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@components/ui/table'
 import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
 import { IUser } from '@interfaces/user'
-import {
-  Button,
-  Fab,
-  FormControl,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Tooltip
-} from '@mui/material'
+
 import { getAreas } from '@services/area'
 import { getCompanies } from '@services/company'
 import { createUserByExcel, downloadTemplateUser, getUsers } from '@services/user'
+import { IconFileExcel } from '@tabler/icons-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
-import { CloudDownload, CloudUploadIcon, Plus, SearchIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { CloudDownload, CloudUploadIcon, Plus, SearchIcon, UploadCloud } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
+interface IFormFilterUsers {
+  search: string
+  role: string
+  company: string
+  area: string
+}
+
+const ROLES = [
+  { label: 'Todos', value: 'all' },
+  { label: 'RENDIDOR', value: 'SUBMITTER' },
+  { label: 'APROBADOR', value: 'APPROVER' },
+  { label: 'APROBADOR GLOBAL', value: 'GLOBAL_APPROVER' }
+]
+
 const PageUsersCorporation = () => {
+  // const [filteredData, setFilteredData] = useState<IUser[]>([])
   const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
   const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
   const [isOpenModalUpdate, openModalUpdate, closeModalUpdate] = useToggle()
@@ -41,14 +44,14 @@ const PageUsersCorporation = () => {
   const [dataSelected, setDataSelected] = useState<IUser | null>(null)
   const [filteredUsers, setFilteredUsers] = useState<IUser[]>([])
   const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
-
-  const { watch, control, setValue } = useForm({
-    defaultValues: {
-      search: '',
-      role: 'all',
-      company: 'all',
-      area: 'all'
-    }
+  const initialValues = {
+    search: '',
+    role: 'all',
+    company: 'all',
+    area: 'all'
+  }
+  const { watch, control, setValue, handleSubmit, reset } = useForm<IFormFilterUsers>({
+    defaultValues: initialValues
   })
 
   const {
@@ -87,8 +90,10 @@ const PageUsersCorporation = () => {
     setFilteredAreas(data)
   }, [company, isFetchingAreas])
 
-  useEffect(() => {
-    if (isFetchingAreas && isFetchingUsers) return
+  // useEffect(() => {
+
+  const usersFiltered = () => {
+    if (isFetchingAreas && isFetchingUsers) return []
 
     const newData = users.filter((user) => {
       const roleMatch = role === 'all' || user.role === role
@@ -104,15 +109,38 @@ const PageUsersCorporation = () => {
       return roleMatch && companyMatch && areaMatch && searchMatch
     })
 
-    setFilteredUsers(newData)
-  }, [company, area, search, role, isFetchingAreas, isFetchingUsers])
+    return newData
+  }
 
-  const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
+  // setFilteredUsers(newData)
+  // }, [company, area, search, role, isFetchingAreas, isFetchingUsers])
+
+  const {
+    getHeaderGroups,
+    getRowModel,
+    setPageSize,
+    getRowCount,
+    getState,
+    setPageIndex,
+    firstPage,
+    lastPage,
+    nextPage,
+    previousPage,
+    getPageCount
+  } = useReactTable({
     data: filteredUsers,
     columns: columnsUser(areas, setDataSelected, openModalUpdate, openModalDelete),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel()
   })
+
+  const onSubmit = () => {
+    setFilteredUsers(usersFiltered())
+  }
+
+  useEffect(() => {
+    setFilteredUsers(users)
+  }, [users])
 
   const { mutate: mutateCreateByExcel, isPending: isPendingCreateUsers } = useMutation({
     mutationFn: createUserByExcel,
@@ -156,153 +184,95 @@ const PageUsersCorporation = () => {
     }
   })
 
+  const handleChangePageSize = (value: string) => {
+    setPageSize(Number(value))
+  }
+
+  const onClearFilter = () => {
+    setFilteredUsers(users || [])
+    reset(initialValues)
+  }
+
+  const valuesCompanies: Option[] = useMemo(() => {
+    const data = companies.map((i) => ({ label: i.name, value: i._id }))
+    const initial = companies.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen empresas', value: '' }
+    return [initial, ...data] as Option[]
+  }, [companies])
+
+  const valuesAreas: Option[] = useMemo(() => {
+    const data = filteredAreas.map((i) => ({ label: i.name, value: i._id }))
+    const initial = filteredAreas.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen areas en esa empresa', value: '' }
+    return [initial, ...data] as Option[]
+  }, [filteredAreas])
+
   return (
     <Show condition={isLoading || isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
-      <div className="flex justify-between">
-        <div className="flex gap-5">
-          <Controller
-            name="search"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                size="small"
-                sx={{ pb: 3 }}
-                placeholder="Buscar"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    )
-                  }
-                }}
-              />
-            )}
-          />
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-800">Usuarios</h2>
 
-          <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-role-label">Rol</InputLabel>
-            <Controller
-              name="role"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="select-role-label"
-                  id="select-company"
-                  label="Empresa"
-                  defaultValue="all"
-                  MenuProps={{
-                    disablePortal: true
-                  }}>
-                  <MenuItem value={'all'}>Todos</MenuItem>
-                  <MenuItem value={'SUBMITTER'}>RENDIDOR</MenuItem>
-                  <MenuItem value={'APPROVER'}>APROBADOR</MenuItem>
-                  <MenuItem value={'GLOBAL_APPROVER'}>APROBADOR GLOBAL</MenuItem>
-                </Select>
-              )}
-            />
-          </FormControl>
+          <div className="flex items-center gap-2">
+            <Button type="button" color="green" className="gap-1" onClick={() => mutateDownload()} disabled={isPendingDownload}>
+              <IconFileExcel className="w-4 h-4" />
+              Descargar Plantilla
+            </Button>
 
-          <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-area-label">Empresa</InputLabel>
-            <Controller
-              name="company"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="select-area-label"
-                  id="select-company"
-                  label="Empresa"
-                  defaultValue="all"
-                  MenuProps={{
-                    disablePortal: true
-                  }}>
-                  {companies.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
-                  {companies.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
-                  {companies.map((i) => (
-                    <MenuItem key={i._id} value={i._id}>
-                      {i?.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormControl>
-          <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-company-label">Area</InputLabel>
-            <Controller
+            <Button type="button" color="green" className="gap-1" onClick={openFileDialog} disabled={isPendingCreateUsers}>
+              <UploadCloud className="w-4 h-4" />
+              Subir Archivo
+            </Button>
+
+            <Button type="button" className="gap-1" onClick={openModalCreate}>
+              <Plus className="w-4 h-4" />
+              Nuevo Usuario
+            </Button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col justify-between gap-3 sm:flex-row">
+          <div className="flex items-center gap-2">
+            <FormSearchInput className="w-60" name="search" control={control} placeholder="Buscar" />
+            <FormSelect name="role" className="w-60" control={control} placeholder="Rol" options={ROLES} />
+            <FormSelect name="company" className="w-60" control={control} placeholder="Empresa" options={valuesCompanies} />
+            <FormSelect
               name="area"
+              className="w-60"
               control={control}
-              render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="select-company-label"
-                  id="select-company"
-                  label="Empresa"
-                  defaultValue=""
-                  disabled={company === 'all'}
-                  MenuProps={{
-                    disablePortal: true
-                  }}>
-                  {filteredAreas.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
-                  {filteredAreas.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
-                  {filteredAreas.map((i) => (
-                    <MenuItem key={i._id} value={i._id}>
-                      {i?.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
+              placeholder="Area"
+              options={valuesAreas}
+              disabled={company === 'all'}
             />
-          </FormControl>
-        </div>
 
-        <div className="flex items-center gap-5">
-          <Button
-            variant="contained"
-            startIcon={<CloudDownload />}
-            onClick={() => mutateDownload()}
-            disabled={isPendingDownload}
-            className="relative">
-            Descargar Pantilla
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<CloudUploadIcon />}
-            onClick={openFileDialog}
-            disabled={isPendingCreateUsers}
-            className="relative">
-            Subir archivo
-          </Button>
-          <Tooltip title="Crear Usuario">
-            <Fab color="primary" onClick={openModalCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
-              <Plus className="w-5 h-5" />
-            </Fab>
-          </Tooltip>
-        </div>
+            {/* <FormDatePickerWithRange control={control} name="dateRange" /> */}
+            <Button type="submit" className="w-24 gap-1">
+              <span>Filtrar</span>
+            </Button>
+            <Button className="w-24 gap-1" color="red" type="button" onClick={onClearFilter}>
+              <span>Limpiar</span>
+            </Button>
+          </div>
+        </form>
       </div>
-      <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
-        <Table className="min-w-[1600px]">
-          <TableHead>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-gray-50 hover:bg-gray-50">
             {getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableCell key={header.id} component="th">
+                  <TableHead key={header.id}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableCell>
+                  </TableHead>
                 ))}
               </TableRow>
             ))}
-          </TableHead>
-          <TableBody>
+          </TableHeader>
+
+          <TableBody className="hover:bg-gray-50">
             {getRowModel().rows?.map((row) => (
-              <TableRow hover key={row.id}>
+              <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} component="td" scope="row">
+                  <TableCell className="font-medium" key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -310,19 +280,19 @@ const PageUsersCorporation = () => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
-      <TablePagination
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-        rowsPerPageOptions={[3, 5, 10]}
-        component="div"
-        count={getRowCount()}
-        rowsPerPage={getState().pagination.pageSize}
-        page={getState().pagination.pageIndex}
-        onPageChange={(e, newPage) => setPageIndex(newPage)}
-        onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
-      />
+      </div>
 
+      <TablePagination
+        total={getRowCount()}
+        pageIndex={getState().pagination.pageIndex + 1}
+        totalPages={getPageCount()}
+        pageSize={String(getState().pagination.pageSize)}
+        onChangePageSize={handleChangePageSize}
+        onFirst={firstPage}
+        onPrevious={previousPage}
+        onNext={nextPage}
+        onLast={lastPage}
+      />
       <ModalCreateUser {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate, companies, areas }} />
       <ModalUpdateUser {...{ isOpen: isOpenModalUpdate, onClose: closeModalUpdate, data: dataSelected, companies, areas }} />
       <ModalDeleteUser {...{ isOpen: isOpenModalDelete, onClose: closeModalDelete, data: dataSelected }} />

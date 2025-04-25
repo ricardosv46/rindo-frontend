@@ -37,9 +37,9 @@ const App = () => {
         refetchOnWindowFocus: false,
         refetchOnMount: true,
         refetchOnReconnect: true,
-        retry: false,
-        staleTime: 0,
-        gcTime: 0
+        retry: false
+        // staleTime: 0,
+        // gcTime: 0
       }
     }
   })

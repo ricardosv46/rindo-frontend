@@ -1,10 +1,12 @@
-import { createColumnHelper } from '@tanstack/react-table'
+import { CustomTooltip } from '@components/shared/CustomTooltip/CustomTooltip'
+import { Button } from '@components/ui/button'
 import { IExpense } from '@interfaces/expense'
-import { IconButton } from '@mui/material'
-import { IconEdit, IconEye, IconEyeOff, IconTrash } from '@tabler/icons-react'
 import { cn, formatNumber } from '@lib/utils'
-import { ChipStatusExpense } from '../components/ChipStatusExpense'
+import { useAuth } from '@store/auth'
+import { createColumnHelper } from '@tanstack/react-table'
+import { Edit, Eye, EyeOff, Trash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { ChipStatusExpense } from '../components/ChipStatusExpense'
 
 const columnHelper = createColumnHelper<IExpense>()
 
@@ -64,16 +66,16 @@ export const columnsExpense = (
         setDataSelectedFile(data?.file)
         openModalFile()
       }
-      if (!data?.file)
-        return (
-          <IconButton disabled>
-            <IconEyeOff className="disabled:text-gray-600" />
-          </IconButton>
-        )
+
+      const disabled = !data?.file
+
       return (
-        <IconButton onClick={handleShowFile}>
-          <IconEye className="text-primary-600" />
-        </IconButton>
+        <CustomTooltip title="Ver Comprobante">
+          <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleShowFile}>
+            {!disabled && <Eye className="text-primary-600" />}
+            {disabled && <EyeOff className="text-gray-600" />}
+          </Button>
+        </CustomTooltip>
       )
     }
   }),
@@ -86,16 +88,16 @@ export const columnsExpense = (
         setDataSelectedFile(data?.fileVisa)
         openModalFile()
       }
-      if (!data?.fileVisa)
-        return (
-          <IconButton disabled>
-            <IconEyeOff className="disabled:text-gray-600" />
-          </IconButton>
-        )
+
+      const disabled = !data?.fileVisa
+
       return (
-        <IconButton onClick={handleShowFile}>
-          <IconEye className="text-primary-600" />
-        </IconButton>
+        <CustomTooltip title="Ver Cuenta">
+          <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleShowFile}>
+            {!disabled && <Eye className="text-primary-600" />}
+            {disabled && <EyeOff className="text-gray-600" />}
+          </Button>
+        </CustomTooltip>
       )
     }
   }),
@@ -104,22 +106,20 @@ export const columnsExpense = (
     cell: (info) => {
       const data = info.row.original
 
+      const disabled = !data?.fileRxh
+
       const handleShowFile = () => {
         setDataSelectedFile(data?.fileRxh)
         openModalFile()
       }
 
-      if (!data?.fileRxh)
-        return (
-          <IconButton disabled>
-            <IconEyeOff className="disabled:text-gray-600" />
-          </IconButton>
-        )
-
       return (
-        <IconButton onClick={handleShowFile}>
-          <IconEye className="text-primary-600" />
-        </IconButton>
+        <CustomTooltip title="Ver Suspención">
+          <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleShowFile}>
+            {!disabled && <Eye className="text-primary-600" />}
+            {disabled && <EyeOff className="text-gray-600" />}
+          </Button>
+        </CustomTooltip>
       )
     }
   }),
@@ -128,8 +128,9 @@ export const columnsExpense = (
     header: 'Acción',
     id: 'accion',
     cell: (info: any) => {
+      const { user } = useAuth()
       const data = info.row.original
-      const disabled = info.row.original?.status !== 'DRAFT'
+      const disabled = data?.status !== 'DRAFT' && data?.status !== 'IN_REVIEW'
       const navigate = useNavigate()
 
       const handleModalDelete = () => {
@@ -138,7 +139,11 @@ export const columnsExpense = (
       }
 
       const handleModalEdit = () => {
-        navigate(`/edit-expense/${data?._id}`)
+        if (data?.status === 'IN_REVIEW') {
+          navigate(`/review-expense/${data?._id}`)
+        } else {
+          navigate(`/edit-expense/${data?._id}`)
+        }
       }
 
       const handleModalDetail = () => {
@@ -146,16 +151,29 @@ export const columnsExpense = (
       }
 
       return (
-        <div className="flex gap-5">
-          <IconButton onClick={handleModalDetail}>
-            <IconEye className="text-primary-600" />
-          </IconButton>
-          <IconButton onClick={handleModalEdit} disabled={disabled}>
-            <IconEdit className={cn(disabled ? 'disabled:text-gray-600' : 'text-primary-600')} />
-          </IconButton>
-          <IconButton onClick={handleModalDelete} disabled={disabled}>
-            <IconTrash className={cn(disabled ? 'disabled:text-gray-600' : 'text-primary-600')} />
-          </IconButton>
+        <div className="flex gap-3">
+          <CustomTooltip title="Ver Detalle">
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={handleModalDetail}>
+              <Eye className="text-primary-600" />
+            </Button>
+          </CustomTooltip>
+
+          {user?.role !== 'CORPORATION' && (
+            <>
+              <CustomTooltip title="Editar">
+                <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full" onClick={handleModalEdit}>
+                  <Edit className={cn(disabled ? 'disabled:text-gray-600' : 'text-primary-600')} />
+                </Button>
+              </CustomTooltip>
+              {data?.status !== 'IN_REVIEW' && (
+                <CustomTooltip title="Eliminar">
+                  <Button variant="ghost" size="icon" disabled={disabled} className="w-8 h-8 rounded-full" onClick={handleModalDelete}>
+                    <Trash className={cn(disabled ? 'disabled:text-gray-600' : 'text-red-600')} />
+                  </Button>
+                </CustomTooltip>
+              )}
+            </>
+          )}
         </div>
       )
     }

@@ -1,4 +1,5 @@
-import { FileUpload, InputSelect, InputText, Spinner } from '@components/shared'
+import { FormInput } from '@components/shared/Forms/FormInput'
+import { FileUpload, FormDatePicker, FormSelect, InputSelect, InputText, Spinner } from '@components/shared'
 import { InputPicker } from '@components/shared/Inputs/InputPicker'
 import { categories } from '@constants/categories'
 import { currencies } from '@constants/currencies'
@@ -10,6 +11,7 @@ import { getOcrExpense } from '@services/expense'
 import { HtmlHTMLAttributes, useEffect } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { z } from 'zod'
+import dayjs from 'dayjs'
 
 export type StepData = {
   loadedFile?: boolean
@@ -47,7 +49,15 @@ export const stepSchemaCreateSpend = z
     serie: z.string().optional(),
     rus: z.boolean().optional(),
     retention: z.number().optional(),
-    date: z.string().min(1, 'La fecha de emisión es obligatoria.'),
+    // date: z.string().min(1, 'La fecha de emisión es obligatoria.'),
+    date: z
+      .date({
+        required_error: 'La fecha de emisión es obligatoria',
+        invalid_type_error: 'La fecha de emisión es obligatoria'
+      })
+      .refine((date) => !dayjs(date).isAfter(dayjs()), {
+        message: 'La fecha no puede ser mayor a la fecha actual'
+      }),
     typeDocument: z.string().min(1, 'El tipo de documento es obligatorio.'),
     file: z.instanceof(File),
     filePreview: z.string().min(1, 'El archivo es obligatorio.'),
@@ -136,38 +146,37 @@ export const FormCreateExpense = ({ index, multiple, loading, className, getData
       <section className="grid grid-cols-2">
         <div className="flex items-start justify-center">
           <div className="grid w-full grid-cols-2 gap-5">
-            <InputText control={control} name="ruc" errors={errors} label="Ruc" maxLength={11} formatText={onlyNumbers} />
+            <FormInput control={control} name="ruc" label="Ruc" maxLength={11} formatText={onlyNumbers} />
 
-            <InputText control={control} name="companyName" errors={errors} label="Razon Social" />
+            <FormInput control={control} name="companyName" label="Razon Social" />
 
-            <InputText control={control} name="description" errors={errors} label="Descripción" className="col-span-2" />
+            <FormInput control={control} name="description" label="Descripción" className="col-span-2" />
 
-            <InputSelect
+            <FormSelect
               control={control}
               name="category"
-              errors={errors}
+              placeholder="Selecciona una categoría"
               label="Categoría"
-              data={categories}
-              disabled={typeDocument === 'BOLETA DE VENTA' && watch().rus}
+              options={categories}
+              disabledOptions={typeDocument === 'BOLETA DE VENTA' && watch().rus}
               exceptions={['Cuenta no deducible']}
             />
 
-            <InputPicker control={control} name="date" errors={errors} label="Fecha de Emisión" />
+            <FormDatePicker control={control} name="date" label="Fecha de Emisión" />
 
-            <InputText
+            <FormInput control={control} name="total" label="Total" formatText={formatNumberInline} formatTextLeave={formatNumber} />
+
+            <FormSelect control={control} name="currency" placeholder="Selecciona una moneda" label="Moneda" options={currencies} />
+
+            <FormSelect
               control={control}
-              name="total"
-              errors={errors}
-              label="Total"
-              formatText={formatNumberInline}
-              formatTextLeave={formatNumber}
+              name="typeDocument"
+              placeholder="Selecciona un tipo de documento"
+              label="Documento"
+              options={typeDocuments}
             />
 
-            <InputSelect control={control} name="currency" errors={errors} label="Moneda" data={currencies} />
-
-            <InputSelect control={control} name="typeDocument" errors={errors} label="Documento" data={typeDocuments} />
-
-            {showSerie && <InputText control={control} name="serie" errors={errors} label="Serie" />}
+            {showSerie && <FormInput control={control} name="serie" label="Serie" />}
           </div>
         </div>
 

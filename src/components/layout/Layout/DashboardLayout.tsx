@@ -14,7 +14,7 @@ export const DashboardLayout = () => {
 
         <ScrollArea className="h-[calc(100vh-72px)] lg:h-[calc(100vh-91px)] w-full">
           <div className="min-h-full p-6 overflow-hidden bg-rindo scroll-auto">
-            <Card className="overflow-hidden">
+            <Card className="p-0 overflow-hidden">
               <Outlet />
             </Card>
           </div>

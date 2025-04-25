@@ -131,11 +131,11 @@ export const FileUpload = ({ name, onFileChange, value, file, label, errors, get
 
   return (
     <FormControl sx={{ minWidth: 120 }} error={!!errors?.[name]}>
-      <p className={cn(!!errors?.[name] ? 'text-error' : '')}>{label}</p>
+      <p className={cn(!!errors?.[name] ? 'text-red-600' : '')}>{label}</p>
       <div
         className={cn(
           'relative flex items-center justify-center w-full px-2 pt-2 pb-2 border border-dashed rounded-sm h-[250px] ',
-          !!errors?.[name] ? 'border-error' : 'border-primary-600'
+          !!errors?.[name] ? 'border-red-600' : 'border-primary-600'
         )}>
         {!filePreview && (
           <div
@@ -145,7 +145,7 @@ export const FileUpload = ({ name, onFileChange, value, file, label, errors, get
             onClick={handleFileChange}
             className={cn(
               'bg-gray-light hover:cursor-pointer text-primary-600 text-center w-full h-full  py-[11px] px-9 rounded-[10px] hover:opacity-50 ease-in-out duration-100 transition-all flex flex-col justify-center items-center gap-5',
-              !!errors?.[name] ? 'text-error' : 'text-primary-600'
+              !!errors?.[name] ? 'text-red-600' : 'text-primary-600'
             )}>
             <UploadIcon error={!!errors?.[name]} />
             Arrastra o selecciona un archivo de tu ordenador

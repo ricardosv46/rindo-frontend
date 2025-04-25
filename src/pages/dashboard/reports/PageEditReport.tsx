@@ -1,25 +1,18 @@
+import { FormInput } from '@components/shared/Forms/FormInput'
+import { FormSearchInput } from '@components/shared/Forms/FormSearchInput'
+import { TablePagination } from '@components/shared/TablePagination/TablePagination'
 import { columnsExpenseByReport } from '@components/corporation'
 import { Card, Modal, Show, Spinner } from '@components/shared'
 import { FileUploadReadOnly } from '@components/shared/Files/FileUploadReadOnly'
+import { Button } from '@components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@components/ui/table'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useToggle } from '@hooks/useToggle'
 import { IExpense } from '@interfaces/expense'
+import { IFilterResponse, IFormFilters } from '@interfaces/filters'
 import { IReport } from '@interfaces/report'
-import {
-  Button,
-  FormControl,
-  FormHelperText,
-  InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField
-} from '@mui/material'
-import { getExpenses } from '@services/expense'
+
+import { getExpenses, getExpensesByReportDraft } from '@services/expense'
 import { editReport, getReport } from '@services/report'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
@@ -32,13 +25,11 @@ import { z } from 'zod'
 
 export interface IFormCreateReport {
   name: string
-  search: string
   expenses: string[]
 }
 
 export const validationSchema = z.object({
   name: z.string().min(1, 'El Razón social es obligatoria.'),
-  search: z.string().optional(),
   expenses: z.array(z.string()).min(1, 'Debe seleccionar al menos un gasto.')
 })
 
@@ -52,17 +43,17 @@ const PageEditReport = () => {
     control,
     formState: { errors },
     watch,
-    setValue
+    setValue,
+    reset
   } = useForm<IFormCreateReport>({
     resolver: zodResolver(validationSchema),
     defaultValues: {
       name: '',
-      search: '',
       expenses: []
     },
     mode: 'onChange'
   })
-  const { search, expenses } = watch()
+  const { expenses } = watch()
 
   const { id } = useParams()
 
@@ -87,29 +78,55 @@ const PageEditReport = () => {
     enabled: !!id
   })
 
-  const getExpensesDraft = async () => {
+  const initialValues: IFormFilters = {
+    search: '',
+    pageSize: '10',
+    dateRange: null,
+    pageIndex: 1
+  }
+  const {
+    watch: watchFilter,
+    control: controlFilter,
+    handleSubmit: handleSubmitFilter,
+    reset: resetFilter,
+    setValue: setValueFilter
+  } = useForm<IFormFilters>({
+    defaultValues: initialValues
+  })
+
+  const { search, pageSize, pageIndex, dateRange } = watchFilter()
+
+  const getExpensesDraft = async (props: IFormFilters) => {
     try {
-      const data = await getExpenses()
-      const expnesesDraft = data?.filter((i) => i?.status === 'DRAFT' || expenses.includes(i?._id!))
-      return expnesesDraft
+      const data = await getExpensesByReportDraft(id!, props)
+      return data
     } catch (error) {
       throw error
     }
   }
 
   const {
-    data: dataeExpenses = [],
-    isLoading: isLoadingExpenses,
-    isFetching: isFetchingExpenses,
-    refetch
-  } = useQuery({
-    queryKey: ['getExpenses'],
-    queryFn: getExpensesDraft,
-    enabled: !isFetchingReport && expenses?.length > 0
+    data: dataExpenses,
+    isPending: isLoadingExpenses,
+    mutate: mutateExpenses
+  } = useMutation<IFilterResponse<IExpense[]>, Error, IFormFilters>({
+    mutationFn: getExpensesDraft,
+    mutationKey: ['getExpensesReportDraft']
   })
 
+  // const {
+  //   data: dataeExpenses = [],
+  //   isLoading: isLoadingExpenses,
+  //   isFetching: isFetchingExpenses,
+  //   refetch
+  // } = useQuery({
+  //   queryKey: ['getExpenses'],
+  //   queryFn: getExpensesDraft,
+  //   enabled: !isFetchingReport && expenses?.length > 0
+  // })
+
   const queryClient = useQueryClient()
-  const { mutate: mutateEdit, isPending: isPendingCreate } = useMutation({
+  const { mutate: mutateEdit, isPending: isPendingEdit } = useMutation({
     mutationFn: editReport,
     onError: (error: string) => {
       toast.error(error)
@@ -121,35 +138,44 @@ const PageEditReport = () => {
     }
   })
 
-  const onSubmit = async (values: IFormCreateReport) => {
-    const { search, ...props } = values
-    mutateEdit({ ...props, id: report?._id })
-  }
-
   useEffect(() => {
-    if (isFetchingExpenses) return
-
-    if (search === '') {
-      setFilteredExpenses(dataeExpenses)
-      return
+    // Si cambia pageSize, reseteamos a la primera página
+    if (pageSize !== initialValues.pageSize) {
+      setValueFilter('pageIndex', 1)
     }
 
-    const newData = dataeExpenses.filter((expense) => {
-      const searchMatch =
-        expense.description?.toLowerCase().includes(search.toLocaleLowerCase()) ||
-        expense.companyName?.toLowerCase().includes(search.toLocaleLowerCase())
-      return searchMatch
+    mutateExpenses({
+      search,
+      pageSize,
+      dateRange,
+      pageIndex: pageSize !== initialValues.pageSize ? 1 : pageIndex
     })
+  }, [pageSize, pageIndex])
 
-    setFilteredExpenses(newData)
-  }, [search, isFetchingExpenses, isFetchingReport])
+  const handleReset = () => {
+    reset()
+    resetFilter()
+    mutateExpenses(initialValues)
+  }
+
+  const onSubmit = async (values: IFormCreateReport) => {
+    mutateEdit({ ...values, id: report._id })
+  }
+
+  const onSubmitFilter = async (values: IFormFilters) => {
+    mutateExpenses(values)
+  }
+
+  const handleEdit = () => {
+    handleSubmit(onSubmit)()
+  }
 
   const handleSeletedForm = (expenses: string[]) => {
     setValue('expenses', expenses, { shouldValidate: true })
   }
 
   const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
-    data: filteredExpenses,
+    data: dataExpenses?.data ?? [],
     columns: columnsExpenseByReport({
       setDataSelectedFile,
       openModalFile,
@@ -159,12 +185,32 @@ const PageEditReport = () => {
       selection: true
     }),
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel()
+    manualPagination: true
   })
+
+  const handleChangePageSize = (pageSize: string) => {
+    setValueFilter('pageSize', pageSize)
+  }
+
+  const handleFirst = () => {
+    setValueFilter('pageIndex', 1)
+  }
+
+  const handlePrevious = () => {
+    setValueFilter('pageIndex', pageIndex - 1)
+  }
+
+  const handleNext = () => {
+    setValueFilter('pageIndex', pageIndex + 1)
+  }
+
+  const handleLast = () => {
+    setValueFilter('pageIndex', dataExpenses?.pagination.totalPages ?? 1)
+  }
 
   return (
     <Show condition={isLoadingExpenses || isFetchingReport} loadingComponent={<Spinner />}>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 py-2">
+      {/* <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 py-2">
         <Controller
           name="name"
           control={control}
@@ -248,6 +294,66 @@ const PageEditReport = () => {
             </FormControl>
 
             <Button className="" type="submit" variant="contained" disabled={isPendingCreate}>
+              Actualizar Informe
+            </Button>
+          </div>
+        </div>
+      </form> */}
+
+      <form onSubmit={handleSubmitFilter(onSubmitFilter)} className="flex flex-col gap-5 py-2">
+        <FormInput label="Nombre" name="name" control={control} placeholder="Nombre" className="w-96" />
+        <div className="flex gap-2">
+          <FormSearchInput name="search" control={controlFilter} placeholder="Buscar" className="w-96" />
+          <Button type="submit" className="w-24">
+            Buscar
+          </Button>
+          <Button type="button" className="w-24" color="red" onClick={handleReset}>
+            Limpiar
+          </Button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-gray-50 hover:bg-gray-50">
+              {getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+
+            <TableBody className="hover:bg-gray-50">
+              {getRowModel().rows?.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell className="font-medium" key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <TablePagination
+            total={dataExpenses?.pagination?.total ?? 0}
+            pageIndex={pageIndex}
+            totalPages={dataExpenses?.pagination.totalPages ?? 1}
+            pageSize={pageSize}
+            onChangePageSize={handleChangePageSize}
+            onFirst={handleFirst}
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            onLast={handleLast}
+          />
+          <div className="flex flex-col items-end gap-3 mt-2">
+            {errors.expenses?.message && <p className="text-sm text-red-500">{errors.expenses?.message}</p>}
+
+            <Button type="button" className="w-48" onClick={handleEdit} disabled={isPendingEdit}>
               Actualizar Informe
             </Button>
           </div>
