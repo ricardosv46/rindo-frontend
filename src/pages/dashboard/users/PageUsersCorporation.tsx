@@ -298,9 +298,9 @@ const PageUsersCorporation = () => {
         onNext={nextPage}
         onLast={lastPage}
       />
-      {/* <ModalCreateUser {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate, companies, areas }} />
+      <ModalCreateUser {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate, companies, areas }} />
       <ModalUpdateUser {...{ isOpen: isOpenModalUpdate, onClose: closeModalUpdate, data: dataSelected, companies, areas }} />
-      <ModalDeleteUser {...{ isOpen: isOpenModalDelete, onClose: closeModalDelete, data: dataSelected }} /> */}
+      <ModalDeleteUser {...{ isOpen: isOpenModalDelete, onClose: closeModalDelete, data: dataSelected }} />
     </Show>
   )
 }
