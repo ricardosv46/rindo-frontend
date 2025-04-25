@@ -139,8 +139,9 @@ const PageUsersCorporation = () => {
   }
 
   useEffect(() => {
+    if (isLoading) return
     setFilteredUsers(users)
-  }, [users])
+  }, [isLoading])
 
   const { mutate: mutateCreateByExcel, isPending: isPendingCreateUsers } = useMutation({
     mutationFn: createUserByExcel,
@@ -195,13 +196,13 @@ const PageUsersCorporation = () => {
 
   const valuesCompanies: Option[] = useMemo(() => {
     const data = companies.map((i) => ({ label: i.name, value: i._id }))
-    const initial = companies.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen empresas', value: '' }
+    const initial = companies.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen empresas', value: '-' }
     return [initial, ...data] as Option[]
   }, [companies])
 
   const valuesAreas: Option[] = useMemo(() => {
     const data = filteredAreas.map((i) => ({ label: i.name, value: i._id }))
-    const initial = filteredAreas.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen areas en esa empresa', value: '' }
+    const initial = filteredAreas.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen areas en esa empresa', value: '-' }
     return [initial, ...data] as Option[]
   }, [filteredAreas])
 
@@ -233,15 +234,19 @@ const PageUsersCorporation = () => {
           <div className="flex items-center gap-2">
             <FormSearchInput className="w-60" name="search" control={control} placeholder="Buscar" />
             <FormSelect name="role" className="w-60" control={control} placeholder="Rol" options={ROLES} />
-            <FormSelect name="company" className="w-60" control={control} placeholder="Empresa" options={valuesCompanies} />
-            <FormSelect
-              name="area"
-              className="w-60"
-              control={control}
-              placeholder="Area"
-              options={valuesAreas}
-              disabled={company === 'all'}
-            />
+            {valuesCompanies.length > 0 && (
+              <FormSelect name="company" className="w-60" control={control} placeholder="Empresa" options={valuesCompanies} />
+            )}
+            {valuesAreas.length > 0 && (
+              <FormSelect
+                name="area"
+                className="w-60"
+                control={control}
+                placeholder="Area"
+                options={valuesAreas}
+                disabled={company === 'all'}
+              />
+            )}
 
             {/* <FormDatePickerWithRange control={control} name="dateRange" /> */}
             <Button type="submit" className="w-24 gap-1">
@@ -293,9 +298,9 @@ const PageUsersCorporation = () => {
         onNext={nextPage}
         onLast={lastPage}
       />
-      <ModalCreateUser {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate, companies, areas }} />
+      {/* <ModalCreateUser {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate, companies, areas }} />
       <ModalUpdateUser {...{ isOpen: isOpenModalUpdate, onClose: closeModalUpdate, data: dataSelected, companies, areas }} />
-      <ModalDeleteUser {...{ isOpen: isOpenModalDelete, onClose: closeModalDelete, data: dataSelected }} />
+      <ModalDeleteUser {...{ isOpen: isOpenModalDelete, onClose: closeModalDelete, data: dataSelected }} /> */}
     </Show>
   )
 }
