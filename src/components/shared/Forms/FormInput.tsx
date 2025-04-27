@@ -1,6 +1,9 @@
 import { Input } from '@/components/ui/input'
 import { Control, Controller } from 'react-hook-form'
 import { cn } from '@/lib/utils'
+import { useToggle } from '@hooks/useToggle'
+import { Button } from '@components/ui/button'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface FormInputProps {
   name: string
@@ -11,6 +14,7 @@ interface FormInputProps {
   formatText?: (value: string) => string
   formatTextLeave?: (value: string) => string
   maxLength?: number
+  type?: 'text' | 'password'
 }
 
 export function FormInput({
@@ -21,17 +25,21 @@ export function FormInput({
   className,
   formatText,
   formatTextLeave,
-  maxLength
+  maxLength,
+  type = 'text'
 }: FormInputProps) {
+  const [isOpenPassword, , , togglePassword] = useToggle()
+
   return (
     <Controller
       name={name}
       control={control}
       render={({ field, fieldState: { error } }) => (
-        <div className="space-y-1">
+        <div className="relative space-y-1">
           {label && <label className="text-sm font-medium">{label}</label>}
           <Input
             {...field}
+            type={type === 'password' && isOpenPassword ? 'text' : type}
             onChange={(e) => (formatText ? field.onChange(formatText(e.target.value)) : field.onChange(e))}
             onBlur={(e) => (formatTextLeave ? field.onChange(formatTextLeave(e.target.value)) : field.onChange(e))}
             maxLength={maxLength}
@@ -44,6 +52,12 @@ export function FormInput({
               className
             )}
           />
+          {type === 'password' && (
+            <Button type="button" variant="ghost" size="icon" className="absolute rounded-full right-1 top-6" onClick={togglePassword}>
+              {!isOpenPassword && <Eye className="text-primary-600" />}
+              {isOpenPassword && <EyeOff className="text-primary-600" />}
+            </Button>
+          )}
           {error && <p className="text-sm text-red-500">{error.message}</p>}
         </div>
       )}

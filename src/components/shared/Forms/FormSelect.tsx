@@ -17,7 +17,9 @@ interface FormSelectProps {
   label?: string
   disabled?: boolean
   exceptions?: string[]
-  disabledOptions?: boolean
+  disabledOptionsExceptions?: boolean
+  disableOptionsValues?: boolean
+  disableValues?: string[]
   // errors?: FieldErrors
 }
 
@@ -31,7 +33,9 @@ export function FormSelect({
   label,
   disabled,
   exceptions,
-  disabledOptions
+  disabledOptionsExceptions,
+  disableOptionsValues,
+  disableValues
 }: FormSelectProps) {
   const sizeClasses = {
     sm: 'h-8 px-3 text-xs',
@@ -70,9 +74,12 @@ export function FormSelect({
                 <SelectItem
                   key={option.value}
                   value={option.value}
-                  disabled={disabledOptions && !exceptions?.includes(option.value)}
+                  disabled={
+                    (disabledOptionsExceptions && !exceptions?.includes(option.value)) ||
+                    (disableOptionsValues && disableValues?.includes(option.value))
+                  }
                   className={cn(
-                    'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none',
+                    'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none',
                     'focus:bg-primary-600/10 focus:text-primary-600',
                     'data-[state=checked]:bg-primary-600 data-[state=checked]:text-white',
                     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50'

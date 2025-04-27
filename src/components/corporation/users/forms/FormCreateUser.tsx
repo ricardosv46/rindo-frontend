@@ -1,29 +1,17 @@
 import { FormInput, FormSelect } from '@components/shared'
 import { FormMultiSelect } from '@components/shared/Forms/FormMultiSelect'
 import { Option } from '@components/shared/Forms/FormSelect'
+import { Button } from '@components/ui/button'
+import { Divider } from '@components/ui/divider'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
 import { ICompany } from '@interfaces/company'
-import {
-  Button,
-  Checkbox,
-  Divider,
-  FormControl,
-  FormHelperText,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  ListItemText,
-  MenuItem,
-  Select,
-  TextField
-} from '@mui/material'
+import { onlyNumbers } from '@lib/utils'
+
 import { createGlobalApprover, createUser } from '@services/user'
-import { IconEye, IconEyeOff } from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import * as yup from 'yup'
 
@@ -80,7 +68,6 @@ const roles = [
 ]
 
 export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProps) => {
-  const [isOpenPassword, , , togglePassword] = useToggle()
   const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
 
   const {
@@ -103,6 +90,8 @@ export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProp
       phone: ''
     }
   })
+
+  console.log(watch())
 
   const queryClient = useQueryClient()
   const { mutate: mutateCreate, isPending: isPendingUser } = useMutation({
@@ -145,10 +134,8 @@ export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProp
   }, [watch()?.company])
 
   useEffect(() => {
-    if (watch()?.role === 'GLOBAL_APPROVER') {
-      setValue('areas', [])
-      setValue('company', '')
-    }
+    setValue('areas', [])
+    setValue('company', '')
   }, [watch()?.role])
 
   const valuesCompanies: Option[] = useMemo(() => {
@@ -156,7 +143,7 @@ export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProp
       const data = companies.map((i) => ({ label: i.name, value: i._id }))
       return data as Option[]
     } else {
-      return [{ label: 'No existen empresas', value: '' }]
+      return [{ label: 'No existen empresas', value: '-' }]
     }
   }, [companies])
 
@@ -165,123 +152,57 @@ export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProp
       const data = filteredAreas.map((i) => ({ label: i.name, value: i._id }))
       return data as Option[]
     } else {
-      return [{ label: 'No existen areas en esa empresa', value: '' }]
+      return [{ label: 'No existen areas en esa empresa', value: '-' }]
     }
   }, [filteredAreas])
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
       data-radix-scroll-area-viewport
-      className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto overflow-x-visible">
+      className="flex flex-col gap-3 px-1 max-h-[calc(100vh-150px)] py-2 overflow-x-visible overflow-y-scroll ">
       <FormInput control={control} name="email" label="Correo" />
       <FormInput control={control} name="name" label="Nombre" />
       <FormInput control={control} name="lastname" label="Apellido" />
       <FormSelect control={control} name="role" label="Rol" placeholder="Selecciona un rol" options={roles} />
       {watch()?.role !== 'GLOBAL_APPROVER' && (
-        <FormSelect control={control} name="company" label="Empresa" placeholder="Selecciona una empresa" options={valuesCompanies} />
+        <FormSelect
+          control={control}
+          name="company"
+          label="Empresa"
+          placeholder="Selecciona una empresa"
+          options={valuesCompanies}
+          disabledOptionsExceptions={valuesCompanies[0].value === '-'}
+        />
       )}
       {watch()?.role === 'APPROVER' && (
-        <FormMultiSelect control={control} name="areas" label="Areas" placeholder="Selecciona una area" options={valuesAreas} />
+        <FormMultiSelect
+          control={control}
+          name="areas"
+          label="Areas"
+          placeholder="Selecciona una area"
+          options={valuesAreas}
+          disabled={!watch()?.company}
+          disabledOptionsExceptions={valuesAreas[0].value === '-'}
+        />
       )}
       {watch()?.role === 'SUBMITTER' && (
-        <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.areas}>
-          <InputLabel id="select-area-label">Area</InputLabel>
-          <Controller
-            name="areas"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                labelId="select-area-label"
-                id="select-area"
-                label="Areas"
-                disabled={!watch()?.company}
-                value={field.value}
-                onChange={(event) => {
-                  const { value } = event.target
-                  field.onChange([value])
-                }}
-                MenuProps={{
-                  disablePortal: true
-                }}>
-                {filteredAreas.map((area) => (
-                  <MenuItem key={area._id} value={area._id}>
-                    {area.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
-          {errors.areas && <FormHelperText>{errors.areas.message}</FormHelperText>}
-        </FormControl>
+        <FormSelect
+          control={control}
+          name="areas"
+          label="Area"
+          placeholder="Selecciona una area"
+          options={valuesAreas}
+          disabled={!watch()?.company}
+          disabledOptionsExceptions={valuesAreas[0].value === '-'}
+        />
       )}
-      <Controller
-        name="password"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type={isOpenPassword ? 'text' : 'password'}
-            label="Contraseña"
-            size="small"
-            autoComplete="off"
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="start">
-                    <IconButton onClick={togglePassword} edge="end">
-                      {!isOpenPassword ? <IconEye className="text-primary-600" /> : <IconEyeOff className="text-primary-600" />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }
-            }}
-          />
-        )}
-      />
-      <Controller
-        name="document"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Documento"
-            size="small"
-            error={!!errors.document}
-            helperText={errors.document?.message}
-            slotProps={{
-              htmlInput: { maxLength: 9 }
-            }}
-          />
-        )}
-      />
-      <Controller
-        name="phone"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Celular"
-            size="small"
-            error={!!errors.phone}
-            helperText={errors.phone?.message}
-            slotProps={{
-              htmlInput: { maxLength: 9 }
-            }}
-          />
-        )}
-      />
+      <FormInput control={control} type="password" name="password" label="Contraseña" />
+      <FormInput control={control} name="document" label="Documento" maxLength={9} formatText={onlyNumbers} />
+      <FormInput control={control} name="phone" label="Celular" maxLength={9} formatText={onlyNumbers} />
       <Divider />
-      <Button type="submit" variant="contained" disabled={isPendingUser || isPendingGlobalApprover}>
+      <Button type="submit" disabled={isPendingUser || isPendingGlobalApprover}>
         Crear
-      </Button>{' '}
+      </Button>
     </form>
   )
 }

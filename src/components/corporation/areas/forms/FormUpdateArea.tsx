@@ -1,6 +1,8 @@
+import { FormInput } from '@components/shared'
+import { Button } from '@components/ui/button'
+import { Divider } from '@components/ui/divider'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { IArea } from '@interfaces/area'
-import { Button, Divider, TextField } from '@mui/material'
 import { updateArea } from '@services/area'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Controller, useForm } from 'react-hook-form'
@@ -47,25 +49,10 @@ export const FormUpdateArea = ({ onClose, data }: FormUpdateAreaProps) => {
   })
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto">
-      <Controller
-        name="name"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Nombre"
-            size="small"
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-        )}
-      />
-
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3 px-1 max-h-[calc(100vh-150px)] py-2  overflow-y-auto ">
+      <FormInput control={control} name="name" label="Nombre" />
       <Divider />
-      <Button type="submit" variant="contained" disabled={isPending}>
+      <Button type="submit" disabled={isPending}>
         Actualizar
       </Button>
     </form>

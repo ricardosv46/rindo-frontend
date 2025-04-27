@@ -1,6 +1,5 @@
 import { downloadFile } from '@/lib/utils'
 import { ModalCreateUser, ModalDeleteUser, ModalUpdateUser, columnsUser } from '@components/corporation'
-import { MenuItem } from '@components/layout/Sidebar/Sidebar'
 import { FormSearchInput, FormSelect, Show, Spinner, TablePagination } from '@components/shared'
 import { Option } from '@components/shared/Forms/FormSelect'
 import { Button } from '@components/ui/button'
@@ -16,9 +15,9 @@ import { IconFileExcel } from '@tabler/icons-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
-import { CloudDownload, CloudUploadIcon, Plus, SearchIcon, UploadCloud } from 'lucide-react'
+import { Plus, UploadCloud } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
 interface IFormFilterUsers {
@@ -48,7 +47,7 @@ const PageUsersCorporation = () => {
     search: '',
     role: 'all',
     company: 'all',
-    area: 'all'
+    area: ''
   }
   const { watch, control, setValue, handleSubmit, reset } = useForm<IFormFilterUsers>({
     defaultValues: initialValues
@@ -112,9 +111,6 @@ const PageUsersCorporation = () => {
     return newData
   }
 
-  // setFilteredUsers(newData)
-  // }, [company, area, search, role, isFetchingAreas, isFetchingUsers])
-
   const {
     getHeaderGroups,
     getRowModel,
@@ -139,9 +135,9 @@ const PageUsersCorporation = () => {
   }
 
   useEffect(() => {
-    if (isLoading) return
+    if (isFetchingUsers) return
     setFilteredUsers(users)
-  }, [isLoading])
+  }, [isFetchingUsers])
 
   const { mutate: mutateCreateByExcel, isPending: isPendingCreateUsers } = useMutation({
     mutationFn: createUserByExcel,
@@ -234,19 +230,23 @@ const PageUsersCorporation = () => {
           <div className="flex items-center gap-2">
             <FormSearchInput className="w-60" name="search" control={control} placeholder="Buscar" />
             <FormSelect name="role" className="w-60" control={control} placeholder="Rol" options={ROLES} />
-            {valuesCompanies.length > 0 && (
-              <FormSelect name="company" className="w-60" control={control} placeholder="Empresa" options={valuesCompanies} />
-            )}
-            {valuesAreas.length > 0 && (
-              <FormSelect
-                name="area"
-                className="w-60"
-                control={control}
-                placeholder="Area"
-                options={valuesAreas}
-                disabled={company === 'all'}
-              />
-            )}
+            <FormSelect
+              name="company"
+              className="w-60"
+              control={control}
+              placeholder="Empresa"
+              options={valuesCompanies}
+              disabledOptionsExceptions={valuesCompanies[0].value === '-'}
+            />
+            <FormSelect
+              name="area"
+              className="w-60"
+              control={control}
+              placeholder="Area"
+              options={valuesAreas}
+              disabled={company === 'all'}
+              disabledOptionsExceptions={valuesAreas[0].value === '-'}
+            />
 
             {/* <FormDatePickerWithRange control={control} name="dateRange" /> */}
             <Button type="submit" className="w-24 gap-1">

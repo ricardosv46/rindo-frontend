@@ -1,7 +1,7 @@
 import { FormForgotPassword } from '@components/auth/FormForgotPassword'
 import { Card } from '@components/shared'
-import { Button } from '@mui/material'
 import Logo from '../../../assets/images/Logo-Rindo.png'
+import { Button } from '@components/ui/button'
 
 const PageForgotPassword = () => {
   return (
@@ -15,7 +15,7 @@ const PageForgotPassword = () => {
           restablecer tu contraseña.
         </p>
         <FormForgotPassword />
-        <Button variant="contained">Enviar</Button>
+        <Button>Enviar</Button>
         <hr className="bg-[#e3e8e]" />
         <p className="font-semibold text-center ">¿Ya tienes una cuenta?</p>
       </Card>

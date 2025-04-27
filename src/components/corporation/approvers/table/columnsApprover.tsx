@@ -1,13 +1,14 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import { IUser } from '@interfaces/user'
-import { Chip } from '@components/shared'
+import { Chip, CustomTooltip } from '@components/shared'
 import { IconButton } from '@mui/material'
 import { IconTrash } from '@tabler/icons-react'
-import { EyeIcon } from 'lucide-react'
+import { Eye, EyeIcon, Trash } from 'lucide-react'
 import { useToggle } from '@hooks/useToggle'
 import { useEffect, useRef } from 'react'
-import { ROLES } from '@/lib/utils'
+import { cn, ROLES } from '@/lib/utils'
 import { IArea } from '@interfaces/area'
+import { Button } from '@components/ui/button'
 
 const columnHelper = createColumnHelper<IUser>()
 
@@ -79,9 +80,11 @@ export const columnsApprover = (
         <div className="relative flex items-center gap-1" ref={dropdownRef}>
           {name}
           {data?.role === 'APPROVER' && name === '' && (
-            <IconButton onClick={openModalAreas}>
-              <EyeIcon className="text-primary-600" />
-            </IconButton>
+            <CustomTooltip title="Ver Areas">
+              <Button variant="ghost" size="icon" className="rounded-full" onClick={openModalAreas}>
+                <Eye className={cn('text-primary-600')} />
+              </Button>
+            </CustomTooltip>
           )}
 
           <div
@@ -129,12 +132,14 @@ export const columnsApprover = (
         openModalDelete()
       }
 
+      const disabled = area === 'all'
+
       return (
-        <div className="flex gap-5">
-          <IconButton onClick={handleDelete} disabled={area === 'all'} className="text-primary-600">
-            <IconTrash className={area === 'all' ? '' : 'text-primary-600'} />
-          </IconButton>
-        </div>
+        <CustomTooltip title="Eliminar">
+          <Button variant="ghost" size="icon" disabled={disabled} className="w-8 h-8 rounded-full" onClick={handleDelete}>
+            <Trash className={cn(disabled ? 'disabled:text-gray-600' : 'text-red-600')} />
+          </Button>
+        </CustomTooltip>
       )
     }
   }

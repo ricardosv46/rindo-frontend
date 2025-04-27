@@ -1,7 +1,10 @@
+import { FormSelect } from '@components/shared'
+import { Option } from '@components/shared/Forms/FormSelect'
+import { Button } from '@components/ui/button'
+import { Divider } from '@components/ui/divider'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { IArea } from '@interfaces/area'
 import { IUser } from '@interfaces/user'
-import { Button, Divider, FormControl, FormHelperText, InputLabel, MenuItem, Select } from '@mui/material'
 import { addApprover } from '@services/area'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
@@ -58,7 +61,14 @@ export const FormAddApprover = ({ onClose, company, area, areas, users }: FormCr
     mutateAdd({ id: area, approver: values.email! })
   }
 
-  const usersDisabled = useMemo(() => areas.filter((i) => i?._id === area)[0]?.approvers?.map((i) => i.approver), [areas])
+  const usersDisabled = useMemo(
+    () =>
+      areas
+        .find((i) => i?._id === area)
+        ?.approvers?.map((i) => i.approver)
+        .filter((id): id is string => id !== undefined) ?? [],
+    [areas]
+  )
 
   const filteredUsers = useMemo(() => {
     const data = users.filter((i) => {
@@ -69,38 +79,33 @@ export const FormAddApprover = ({ onClose, company, area, areas, users }: FormCr
     return data
   }, [users, areas])
 
+  const valuesUsers: Option[] = useMemo(() => {
+    if (filteredUsers.length > 0) {
+      const data = filteredUsers.map((i) => ({ label: i.email, value: i._id }))
+      return data as Option[]
+    } else {
+      return [{ label: 'No existen areas en esa empresa', value: '-' }]
+    }
+  }, [filteredUsers])
+
+  console.log({ usersDisabled })
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
       data-radix-scroll-area-viewport
       className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto">
-      <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.email}>
-        <InputLabel id="select-company-label">Empresa</InputLabel>
-        <Controller
-          name="email"
-          control={control}
-          render={({ field }) => (
-            <Select
-              {...field}
-              labelId="select-company-label"
-              id="select-company"
-              label="Empresa"
-              defaultValue=""
-              MenuProps={{
-                disablePortal: true
-              }}>
-              {filteredUsers.map((user) => (
-                <MenuItem key={user._id} value={user._id} disabled={usersDisabled?.includes(user?._id)}>
-                  {user.email}
-                </MenuItem>
-              ))}
-            </Select>
-          )}
-        />
-        {errors.email && <FormHelperText>{errors.email.message}</FormHelperText>}
-      </FormControl>
+      <FormSelect
+        control={control}
+        name="email"
+        label="Correo"
+        placeholder="Selecciona una area"
+        options={valuesUsers}
+        disableOptionsValues={true}
+        disableValues={usersDisabled}
+      />
       <Divider />
-      <Button type="submit" variant="contained" disabled={isPendingAdd}>
+      <Button type="submit" disabled={isPendingAdd}>
         Agregar
       </Button>
     </form>

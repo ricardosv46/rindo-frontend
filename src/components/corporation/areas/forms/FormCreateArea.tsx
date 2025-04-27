@@ -1,8 +1,12 @@
+import { FormInput } from '@components/shared'
+import { FormSelect, Option } from '@components/shared/Forms/FormSelect'
+import { Button } from '@components/ui/button'
+import { Divider } from '@components/ui/divider'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { ICompany } from '@interfaces/company'
-import { Button, Divider, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField } from '@mui/material'
 import { createArea } from '@services/area'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import * as yup from 'yup'
@@ -50,52 +54,29 @@ export const FormCreateArea = ({ onClose, companies }: FormCreateAreaProps) => {
     }
   })
 
+  const valuesCompanies: Option[] = useMemo(() => {
+    if (companies.length > 0) {
+      const data = companies.map((i) => ({ label: i.name, value: i._id }))
+      return data as Option[]
+    } else {
+      return [{ label: 'No existen empresas', value: '-' }]
+    }
+  }, [companies])
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto">
-      <Controller
-        name="name"
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3 px-1 max-h-[calc(100vh-150px)] py-2 overflow-y-auto ">
+      <FormInput control={control} name="name" label="Nombre" />
+      <FormSelect
         control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Nombre"
-            size="small"
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-        )}
+        name="company"
+        label="Empresa"
+        placeholder="Selecciona una empresa"
+        options={valuesCompanies}
+        disabledOptionsExceptions={valuesCompanies[0].value === '-'}
       />
 
-      <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.company}>
-        <InputLabel id="select-company-label">Empresa</InputLabel>
-        <Controller
-          name="company"
-          control={control}
-          render={({ field }) => (
-            <Select
-              {...field}
-              labelId="select-company-label"
-              id="select-company"
-              label="Empresa"
-              defaultValue=""
-              MenuProps={{
-                disablePortal: true
-              }}>
-              {companies.map((company) => (
-                <MenuItem key={company._id} value={company._id}>
-                  {company.name}
-                </MenuItem>
-              ))}
-            </Select>
-          )}
-        />{' '}
-        {errors.company && <FormHelperText>{errors.company.message}</FormHelperText>}
-      </FormControl>
-
       <Divider />
-      <Button type="submit" variant="contained" disabled={isPending}>
+      <Button type="submit" disabled={isPending}>
         Crear
       </Button>
     </form>

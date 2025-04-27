@@ -1,17 +1,14 @@
+import { FileUpload, FormDatePicker, FormSelect } from '@components/shared'
 import { FormInput } from '@components/shared/Forms/FormInput'
-import { FileUpload, FormDatePicker, FormSelect, InputSelect, InputText, Spinner } from '@components/shared'
-import { InputPicker } from '@components/shared/Inputs/InputPicker'
 import { categories } from '@constants/categories'
 import { currencies } from '@constants/currencies'
 import { typeDocuments } from '@constants/typeDocuments'
-import { useToggle } from '@hooks/useToggle'
 import { Category, Currency, TypeDocument } from '@interfaces/expense'
-import { cn, formatNumber, formatNumberInline, onlyNumbers, removeAccents } from '@lib/utils'
-import { getOcrExpense } from '@services/expense'
+import { cn, formatNumber, formatNumberInline, onlyNumbers } from '@lib/utils'
+import dayjs from 'dayjs'
 import { HtmlHTMLAttributes, useEffect } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { z } from 'zod'
-import dayjs from 'dayjs'
 
 export type StepData = {
   loadedFile?: boolean
@@ -158,7 +155,7 @@ export const FormCreateExpense = ({ index, multiple, loading, className, getData
               placeholder="Selecciona una categoría"
               label="Categoría"
               options={categories}
-              disabledOptions={typeDocument === 'BOLETA DE VENTA' && watch().rus}
+              disabledOptionsExceptions={typeDocument === 'BOLETA DE VENTA' && watch().rus}
               exceptions={['Cuenta no deducible']}
             />
 

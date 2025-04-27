@@ -1,11 +1,14 @@
 // areaColumns.tsx
 import { createColumnHelper } from '@tanstack/react-table'
 import { IArea } from '@interfaces/area'
-import { IconButton, Switch } from '@mui/material'
 import { IconEdit } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
 import { updateArea } from '@services/area'
 import { toast } from 'react-toastify'
+import { Switch } from '@components/ui/switch'
+import { CustomTooltip } from '@components/shared'
+import { Button } from '@components/ui/button'
+import { Edit } from 'lucide-react'
 
 const columnHelper = createColumnHelper<IArea>()
 
@@ -39,11 +42,11 @@ export const columnsArea = (setDataSelected: (data: IArea | null) => void, openM
         }
       })
 
-      const handleUpdate = async (e: any) => {
-        mutateUpdate({ status: e.target.checked, id: data?._id })
+      const handleUpdate = async (value: boolean) => {
+        mutateUpdate({ status: value, id: data?._id })
       }
 
-      return <Switch title="Cambiar estado" color="primary" disabled={isPending} checked={info.getValue()} onChange={handleUpdate} />
+      return <Switch title="Cambiar estado" color="primary" disabled={isPending} checked={info.getValue()} onCheckedChange={handleUpdate} />
     }
   }),
   {
@@ -63,11 +66,11 @@ export const columnsArea = (setDataSelected: (data: IArea | null) => void, openM
       }
 
       return (
-        <div className="flex gap-5">
-          <IconButton onClick={handleUpdate}>
-            <IconEdit className="text-primary-600" />
-          </IconButton>
-        </div>
+        <CustomTooltip title="Editar">
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={handleUpdate}>
+            <Edit className={'text-primary-600'} />
+          </Button>
+        </CustomTooltip>
       )
     }
   }

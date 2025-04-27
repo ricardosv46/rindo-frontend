@@ -1,25 +1,12 @@
 import { columnsArea, ModalCreateArea, ModalUpdateArea } from '@components/corporation'
-import { Show, Spinner } from '@components/shared'
+import { FormSearchInput, FormSelect, Show, Spinner, TablePagination } from '@components/shared'
+import { Option } from '@components/shared/Forms/FormSelect'
+import { Button } from '@components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@components/ui/table'
 import { useDebounce } from '@hooks/useDebounce'
 import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
-import {
-  Fab,
-  FormControl,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Tooltip
-} from '@mui/material'
+
 import { getAreas } from '@services/area'
 import { getCompanies } from '@services/company'
 import { useQuery } from '@tanstack/react-query'
@@ -34,12 +21,13 @@ const PageAreas = () => {
   const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
 
   const [dataSelected, setDataSelected] = useState<IArea | null>(null)
-  // const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
-  const { watch, control } = useForm({
-    defaultValues: {
-      search: '',
-      company: 'all'
-    }
+  const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
+  const initialValues = {
+    search: '',
+    company: 'all'
+  }
+  const { watch, control, handleSubmit, reset } = useForm({
+    defaultValues: initialValues
   })
 
   const {
@@ -59,103 +47,115 @@ const PageAreas = () => {
 
   const { search, company } = watch()
 
-  const debouncedSearchTerm = useDebounce(search, 300)
+  // const debouncedSearchTerm = useDebounce(search, 300)
 
-  const filteredData = useMemo(() => {
+  const filteredData = () => {
     return areas.filter((area) => {
-      const term = debouncedSearchTerm?.toLowerCase() ?? ''
+      const term = search?.toLowerCase() ?? ''
       const companyMatch = company === 'all' || area.company?._id === company
       const searchMatch = area.name?.toLowerCase().includes(term) || area.company?.name?.toLowerCase().includes(term)
       return companyMatch && searchMatch
     })
-  }, [areas, debouncedSearchTerm, company])
+  }
 
-  const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
-    data: filteredData,
+  const {
+    getHeaderGroups,
+    getRowModel,
+    setPageSize,
+    getRowCount,
+    getState,
+    setPageIndex,
+    getPageCount,
+    firstPage,
+    previousPage,
+    nextPage,
+    lastPage
+  } = useReactTable({
+    data: filteredAreas,
     columns: columnsArea(setDataSelected, openModalUpdate, refetch),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel()
   })
 
+  const handleChangePageSize = (value: string) => {
+    setPageSize(Number(value))
+  }
+
+  const onSubmit = () => {
+    setFilteredAreas(filteredData())
+  }
+
+  const onClearFilter = () => {
+    setFilteredAreas(areas || [])
+    reset(initialValues)
+  }
+
+  const valuesCompanies: Option[] = useMemo(() => {
+    const data = companies.map((i) => ({ label: i.name, value: i._id }))
+    const initial = companies.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen empresas', value: '-' }
+    return [initial, ...data] as Option[]
+  }, [companies])
+
+  useEffect(() => {
+    if (isFetchingAreas) return
+    setFilteredAreas(areas)
+  }, [isFetchingAreas])
+
   return (
     <Show condition={isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
-      <div className="flex justify-between">
-        <div className="flex gap-5">
-          <Controller
-            name="search"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                size="small"
-                sx={{ pb: 3 }}
-                placeholder="Buscar"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    )
-                  }
-                }}
-              />
-            )}
-          />
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-800">Usuarios</h2>
 
-          <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-company-label">Empresa</InputLabel>
-            <Controller
-              name="company"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="select-company-label"
-                  id="select-company"
-                  label="Empresa"
-                  defaultValue="all"
-                  MenuProps={{
-                    disablePortal: true
-                  }}>
-                  {companies.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
-                  {companies.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
-                  {companies.map((i) => (
-                    <MenuItem key={i._id} value={i._id}>
-                      {i?.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormControl>
+          <div className="flex items-center gap-2">
+            <Button type="button" className="gap-1" onClick={openModalCreate}>
+              <Plus className="w-4 h-4" />
+              Nueva Area
+            </Button>
+          </div>
         </div>
 
-        <Tooltip title="Crear Area">
-          <Fab color="primary" onClick={openModalCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
-            <Plus className="w-5 h-5" />
-          </Fab>
-        </Tooltip>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col justify-between gap-3 sm:flex-row">
+          <div className="flex items-center gap-2">
+            <FormSearchInput className="w-60" name="search" control={control} placeholder="Buscar" />
+            <FormSelect
+              name="company"
+              className="w-60"
+              control={control}
+              placeholder="Empresa"
+              options={valuesCompanies}
+              disabledOptionsExceptions={valuesCompanies[0].value === '-'}
+            />
+
+            <Button type="submit" className="w-24 gap-1">
+              <span>Filtrar</span>
+            </Button>
+            <Button className="w-24 gap-1" color="red" type="button" onClick={onClearFilter}>
+              <span>Limpiar</span>
+            </Button>
+          </div>
+        </form>
       </div>
 
-      <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
-        <Table sx={{ minWidth: 750 }} aria-label="customized table">
-          <TableHead>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-gray-50 hover:bg-gray-50">
             {getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableCell key={header.id} component="th">
+                  <TableHead key={header.id}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableCell>
+                  </TableHead>
                 ))}
               </TableRow>
             ))}
-          </TableHead>
-          <TableBody>
+          </TableHeader>
+
+          <TableBody className="hover:bg-gray-50">
             {getRowModel().rows?.map((row) => (
-              <TableRow hover key={row.id}>
+              <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} component="td" scope="row">
+                  <TableCell className="font-medium" key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -163,19 +163,19 @@ const PageAreas = () => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
-      <TablePagination
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-        rowsPerPageOptions={[3, 5, 10]}
-        component="div"
-        count={getRowCount()}
-        rowsPerPage={getState().pagination.pageSize}
-        page={getState().pagination.pageIndex}
-        onPageChange={(e, newPage) => setPageIndex(newPage)}
-        onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
-      />
+      </div>
 
+      <TablePagination
+        total={getRowCount()}
+        pageIndex={getState().pagination.pageIndex + 1}
+        totalPages={getPageCount()}
+        pageSize={String(getState().pagination.pageSize)}
+        onChangePageSize={handleChangePageSize}
+        onFirst={firstPage}
+        onPrevious={previousPage}
+        onNext={nextPage}
+        onLast={lastPage}
+      />
       <ModalCreateArea {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate, companies }} />
       <ModalUpdateArea {...{ isOpen: isOpenModalUpdate, onClose: closeModalUpdate, data: dataSelected }} />
     </Show>

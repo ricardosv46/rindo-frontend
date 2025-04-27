@@ -1,23 +1,18 @@
+import { FormInput, FormSelect } from '@components/shared'
+import { FormMultiSelect } from '@components/shared/Forms/FormMultiSelect'
+import { Option } from '@components/shared/Forms/FormSelect'
+import { Button } from '@components/ui/button'
+import { Divider } from '@components/ui/divider'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { IArea } from '@interfaces/area'
 import { ICompany } from '@interfaces/company'
 import { IUser } from '@interfaces/user'
-import {
-  Button,
-  Checkbox,
-  Divider,
-  FormControl,
-  FormHelperText,
-  InputLabel,
-  ListItemText,
-  MenuItem,
-  Select,
-  TextField
-} from '@mui/material'
+import { onlyNumbers } from '@lib/utils'
+
 import { updateUser } from '@services/user'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useEffect, useMemo, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import * as yup from 'yup'
 
@@ -66,6 +61,13 @@ interface FormUpdateUserProps {
   areas: IArea[]
   data?: IUser | null
 }
+
+const roles = [
+  { label: 'RENDIDOR', value: 'SUBMITTER' },
+  { label: 'APROBADOR', value: 'APPROVER' },
+  { label: 'APROBADOR GLOBAL', value: 'GLOBAL_APPROVER' }
+]
+
 export const FormUpdateUser = ({ onClose, companies, areas, data }: FormUpdateUserProps) => {
   const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
 
@@ -120,230 +122,73 @@ export const FormUpdateUser = ({ onClose, companies, areas, data }: FormUpdateUs
     setValue('areas', data?.areas)
   }, [])
 
+  const valuesCompanies: Option[] = useMemo(() => {
+    if (companies.length > 0) {
+      const data = companies.map((i) => ({ label: i.name, value: i._id }))
+      return data as Option[]
+    } else {
+      return [{ label: 'No existen empresas', value: '-' }]
+    }
+  }, [companies])
+
+  const valuesAreas: Option[] = useMemo(() => {
+    if (filteredAreas.length > 0) {
+      const data = filteredAreas.map((i) => ({ label: i.name, value: i._id }))
+      return data as Option[]
+    } else {
+      return [{ label: 'No existen areas en esa empresa', value: '-' }]
+    }
+  }, [filteredAreas])
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
       data-radix-scroll-area-viewport
-      className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto">
-      <Controller
-        name="email"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Correo"
-            size="small"
-            error={!!errors.email}
-            helperText={errors.email?.message}
-          />
-        )}
-      />
-      <Controller
-        name="name"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Nombre"
-            size="small"
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-        )}
-      />
-      <Controller
-        name="lastname"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Apellido"
-            size="small"
-            error={!!errors.lastname}
-            helperText={errors.lastname?.message}
-          />
-        )}
-      />
-      <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.role}>
-        <InputLabel id="select-company-label">Rol</InputLabel>
-        <Controller
-          name="role"
-          control={control}
-          render={({ field }) => (
-            <Select
-              {...field}
-              disabled
-              onChange={(e) => {
-                if (e.target.value === 'GLOBAL_APPROVER') {
-                  setValue('areas', [])
-                  setValue('company', '')
-                }
-                field.onChange(e)
-              }}
-              labelId="select-company-label"
-              id="select-company"
-              label="Rol"
-              defaultValue=""
-              MenuProps={{
-                disablePortal: true
-              }}>
-              <MenuItem value={'SUBMITTER'}>RENDIDOR</MenuItem>
-              <MenuItem value={'APPROVER'}>APROBADOR</MenuItem>
-              <MenuItem value={'GLOBAL_APPROVER'}>APROBADOR GLOBAL</MenuItem>
-            </Select>
-          )}
-        />
-        {errors.company && <FormHelperText>{errors.company.message}</FormHelperText>}
-      </FormControl>
+      className="flex flex-col gap-3 px-1 max-h-[calc(100vh-150px)] py-2 overflow-x-visible overflow-y-scroll ">
+      <FormInput control={control} name="email" label="Correo" />
+      <FormInput control={control} name="name" label="Nombre" />
+      <FormInput control={control} name="lastname" label="Apellido" />
+      <FormSelect control={control} name="role" label="Rol" placeholder="Selecciona un rol" options={roles} disabled />
       {watch()?.role !== 'GLOBAL_APPROVER' && (
-        <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.company}>
-          <InputLabel id="select-company-label">Empresa</InputLabel>
-          <Controller
-            name="company"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                disabled={!!watch().company}
-                labelId="select-company-label"
-                id="select-company"
-                label="Empresa"
-                defaultValue=""
-                MenuProps={{
-                  disablePortal: true
-                }}>
-                {companies.map((company) => (
-                  <MenuItem key={company._id} value={company._id}>
-                    {company.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
-          {errors.company && <FormHelperText>{errors.company.message}</FormHelperText>}
-        </FormControl>
+        <FormSelect
+          control={control}
+          name="company"
+          label="Empresa"
+          disabled={!!watch().company}
+          placeholder="Selecciona una empresa"
+          options={valuesCompanies}
+          disabledOptionsExceptions={valuesCompanies[0].value === '-'}
+        />
       )}
       {watch()?.role === 'APPROVER' && (
-        <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.areas}>
-          <InputLabel id="select-area-label">Area</InputLabel>
-          <Controller
-            name="areas"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                labelId="select-area-label"
-                id="select-area"
-                label="Areas"
-                disabled={!watch()?.company}
-                multiple
-                value={field.value}
-                onChange={(event) => {
-                  const { value } = event.target
-                  field.onChange(typeof value === 'string' ? value.split(',') : value)
-                }}
-                renderValue={(selected) =>
-                  filteredAreas
-                    .filter((area) => selected.includes(area?._id ?? ''))
-                    .map((area) => area.name)
-                    .join(', ')
-                }
-                MenuProps={{
-                  disablePortal: true
-                }}>
-                {filteredAreas.length > 0 &&
-                  filteredAreas.map((area) => (
-                    <MenuItem key={area._id} value={area._id}>
-                      <Checkbox checked={field?.value?.includes(area?._id ?? '')} />
-                      <ListItemText primary={area.name} />
-                    </MenuItem>
-                  ))}
-
-                {filteredAreas.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
-              </Select>
-            )}
-          />
-          {errors.areas && <FormHelperText>{errors.areas.message}</FormHelperText>}
-        </FormControl>
+        <FormMultiSelect
+          control={control}
+          name="areas"
+          label="Areas"
+          placeholder="Selecciona una area"
+          options={valuesAreas}
+          disabled={!watch()?.company}
+          disabledOptionsExceptions={valuesAreas[0].value === '-'}
+        />
       )}
       {watch()?.role === 'SUBMITTER' && (
-        <FormControl sx={{ minWidth: 120 }} size="small" error={!!errors.areas}>
-          <InputLabel id="select-area-label">Area</InputLabel>
-          <Controller
-            name="areas"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                labelId="select-area-label"
-                id="select-area"
-                label="Areas"
-                disabled={!watch()?.company}
-                value={field.value}
-                onChange={(event) => {
-                  const { value } = event.target
-                  field.onChange([value])
-                }}
-                MenuProps={{
-                  disablePortal: true
-                }}>
-                {filteredAreas.map((area) => (
-                  <MenuItem key={area._id} value={area._id}>
-                    {area.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
-          {errors.areas && <FormHelperText>{errors.areas.message}</FormHelperText>}
-        </FormControl>
+        <FormSelect
+          control={control}
+          name="areas"
+          label="Area"
+          placeholder="Selecciona una area"
+          options={valuesAreas}
+          disabled={!watch()?.company}
+          disabledOptionsExceptions={valuesAreas[0].value === '-'}
+        />
       )}
-      <Controller
-        name="document"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Documento"
-            size="small"
-            error={!!errors.document}
-            helperText={errors.document?.message}
-            slotProps={{
-              htmlInput: { maxLength: 9 }
-            }}
-          />
-        )}
-      />
-      <Controller
-        name="phone"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Celular"
-            size="small"
-            error={!!errors.phone}
-            helperText={errors.phone?.message}
-            slotProps={{
-              htmlInput: { maxLength: 9 }
-            }}
-          />
-        )}
-      />
+      <FormInput control={control} name="document" label="Documento" maxLength={9} formatText={onlyNumbers} />
+      <FormInput control={control} name="phone" label="Celular" maxLength={9} formatText={onlyNumbers} />
       <Divider />
-      <Button type="submit" variant="contained" disabled={isPendingUpdate}>
+
+      <Button type="submit" disabled={isPendingUpdate}>
         Actualizar
-      </Button>{' '}
+      </Button>
     </form>
   )
 }

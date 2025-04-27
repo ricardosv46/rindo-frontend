@@ -1,35 +1,21 @@
 import { columnsApprover, ModalAddApprover, ModalDeleteApprover } from '@components/corporation'
-import { Show, Spinner } from '@components/shared'
+import { FormSearchInput, FormSelect, Show, Spinner, TablePagination } from '@components/shared'
+import { Option } from '@components/shared/Forms/FormSelect'
+import { Button } from '@components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@components/ui/table'
 import { useToggle } from '@hooks/useToggle'
 import { IArea } from '@interfaces/area'
 import { IUser } from '@interfaces/user'
-import {
-  Fab,
-  FormControl,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Tooltip
-} from '@mui/material'
+
 import { getAreas } from '@services/area'
 import { getCompanies } from '@services/company'
 import { getApprovers } from '@services/user'
 import { useQuery } from '@tanstack/react-query'
 
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
-import { Plus, SearchIcon } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
-
+import { useForm } from 'react-hook-form'
 const PageApprovers = () => {
   const [isOpenModalAdd, openModalAdd, closeModalAdd] = useToggle()
   const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
@@ -37,13 +23,13 @@ const PageApprovers = () => {
   const [dataSelected, setDataSelected] = useState<IUser | null>(null)
   const [filteredUsers, setFilteredUsers] = useState<IUser[]>([])
   const [filteredAreas, setFilteredAreas] = useState<IArea[]>([])
-
-  const { watch, control, setValue } = useForm({
-    defaultValues: {
-      search: '',
-      company: 'all',
-      area: 'all'
-    }
+  const initialValues = {
+    search: '',
+    company: 'all',
+    area: 'all'
+  }
+  const { watch, control, setValue, reset, handleSubmit } = useForm({
+    defaultValues: initialValues
   })
 
   const {
@@ -84,9 +70,8 @@ const PageApprovers = () => {
     setFilteredAreas(data)
   }, [company, isFetchingAreas])
 
-  useEffect(() => {
-    if (isFetchingAreas && isFetchingUsers) return
-
+  const usersFiltered = () => {
+    if (isFetchingAreas && isFetchingUsers) return []
     const areaUsed = areas.find((i) => i?._id === area)
     const approvers = areaUsed?.approvers?.map((i) => i.approver)
     const areaMatch = area === 'all'
@@ -106,129 +91,122 @@ const PageApprovers = () => {
     })
 
     const dataOrdered = areaMatch ? newData : newData.sort((a, b) => approvers?.indexOf(a?._id!)! - approvers?.indexOf(b?._id!)!)
+    return dataOrdered
+  }
 
-    setFilteredUsers(dataOrdered)
-  }, [company, area, search, isFetchingAreas, isFetchingUsers])
+  useEffect(() => {
+    if (isFetchingUsers) return
+    setFilteredUsers(users)
+  }, [isFetchingUsers])
 
-  const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
+  const {
+    getHeaderGroups,
+    getRowModel,
+    setPageSize,
+    getRowCount,
+    getState,
+    setPageIndex,
+    getPageCount,
+    firstPage,
+    lastPage,
+    nextPage,
+    previousPage
+  } = useReactTable({
     data: filteredUsers,
     columns: columnsApprover(areas, setDataSelected, openModalDelete, area),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel()
   })
 
+  const handleChangePageSize = (value: string) => {
+    setPageSize(Number(value))
+  }
+
+  const onSubmit = () => {
+    setFilteredUsers(usersFiltered())
+  }
+
+  const onClearFilter = () => {
+    setFilteredUsers(users || [])
+    reset(initialValues)
+  }
+
+  const valuesCompanies: Option[] = useMemo(() => {
+    const data = companies.map((i) => ({ label: i.name, value: i._id }))
+    const initial = companies.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen empresas', value: '-' }
+    return [initial, ...data] as Option[]
+  }, [companies])
+
+  const valuesAreas: Option[] = useMemo(() => {
+    const data = filteredAreas.map((i) => ({ label: i.name, value: i._id }))
+    const initial = filteredAreas.length > 0 ? { label: 'Todos', value: 'all' } : { label: 'No existen areas en esa empresa', value: '-' }
+    return [initial, ...data] as Option[]
+  }, [filteredAreas])
+
   return (
     <Show condition={isLoadingUsers || isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
-      <div className="flex justify-between">
-        <div className="flex gap-5">
-          <Controller
-            name="search"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                size="small"
-                sx={{ pb: 3 }}
-                placeholder="Buscar"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    )
-                  }
-                }}
-              />
-            )}
-          />
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-800">Usuarios</h2>
 
-          <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-company-label">Empresa</InputLabel>
-            <Controller
-              name="company"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="select-company-label"
-                  id="select-company"
-                  label="Empresa"
-                  defaultValue="all"
-                  MenuProps={{
-                    disablePortal: true
-                  }}>
-                  {companies.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
-                  {companies.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
-                  {companies.map((i) => (
-                    <MenuItem key={i._id} value={i._id}>
-                      {i?.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormControl>
-          <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="select-company-label">Area</InputLabel>
-            <Controller
-              name="area"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="select-company-label"
-                  id="select-company"
-                  label="Empresa"
-                  defaultValue=""
-                  disabled={company === 'all'}
-                  MenuProps={{
-                    disablePortal: true
-                  }}>
-                  {filteredAreas.length > 0 && <MenuItem value={'all'}>Todos</MenuItem>}
-                  {filteredAreas.length === 0 && <MenuItem value={''}>No existen areas en esa empresa</MenuItem>}
-                  {filteredAreas.map((i) => (
-                    <MenuItem key={i._id} value={i._id}>
-                      {i?.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormControl>
+          <div className="flex items-center gap-2">
+            <Button type="button" className="gap-1" onClick={openModalAdd}>
+              <Plus className="w-4 h-4" />
+              Agregar Aprobador
+            </Button>
+          </div>
         </div>
 
-        <Tooltip title="Agregar Aprobador">
-          <span>
-            <Fab
-              color="primary"
-              disabled={area === 'all'}
-              onClick={openModalAdd}
-              size="small"
-              sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
-              <Plus className="w-5 h-5" />
-            </Fab>
-          </span>
-        </Tooltip>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col justify-between gap-3 sm:flex-row">
+          <div className="flex items-center gap-2">
+            <FormSearchInput className="w-60" name="search" control={control} placeholder="Buscar" />
+            <FormSelect
+              name="company"
+              className="w-60"
+              control={control}
+              placeholder="Empresa"
+              options={valuesCompanies}
+              disabledOptionsExceptions={valuesCompanies[0].value === '-'}
+            />
+            <FormSelect
+              name="area"
+              className="w-60"
+              control={control}
+              placeholder="Area"
+              options={valuesAreas}
+              disabled={company === 'all'}
+              disabledOptionsExceptions={valuesAreas[0].value === '-'}
+            />
+
+            <Button type="submit" className="w-24 gap-1">
+              <span>Filtrar</span>
+            </Button>
+            <Button className="w-24 gap-1" color="red" type="button" onClick={onClearFilter}>
+              <span>Limpiar</span>
+            </Button>
+          </div>
+        </form>
       </div>
-      <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
-        <Table className="min-w-[1600px]">
-          <TableHead>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-gray-50 hover:bg-gray-50">
             {getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableCell key={header.id} component="th">
+                  <TableHead key={header.id}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableCell>
+                  </TableHead>
                 ))}
               </TableRow>
             ))}
-          </TableHead>
-          <TableBody>
+          </TableHeader>
+
+          <TableBody className="hover:bg-gray-50">
             {getRowModel().rows?.map((row) => (
-              <TableRow hover key={row.id}>
+              <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} component="td" scope="row">
+                  <TableCell className="font-medium" key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -236,19 +214,19 @@ const PageApprovers = () => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
-      <TablePagination
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-        rowsPerPageOptions={[3, 5, 10]}
-        component="div"
-        count={getRowCount()}
-        rowsPerPage={getState().pagination.pageSize}
-        page={getState().pagination.pageIndex}
-        onPageChange={(e, newPage) => setPageIndex(newPage)}
-        onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
-      />
+      </div>
 
+      <TablePagination
+        total={getRowCount()}
+        pageIndex={getState().pagination.pageIndex + 1}
+        totalPages={getPageCount()}
+        pageSize={String(getState().pagination.pageSize)}
+        onChangePageSize={handleChangePageSize}
+        onFirst={firstPage}
+        onPrevious={previousPage}
+        onNext={nextPage}
+        onLast={lastPage}
+      />
       <ModalAddApprover
         {...{
           isOpen: isOpenModalAdd,
