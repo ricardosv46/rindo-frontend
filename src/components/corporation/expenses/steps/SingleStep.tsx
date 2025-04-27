@@ -1,10 +1,10 @@
 import { FormCreateExpense, StepData, stepSchemaCreateSpend } from '@components/corporation/expenses/forms/FormCreateExpense'
 import { Spinner } from '@components/shared'
+import { Button } from '@components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useToggle } from '@hooks/useToggle'
 import { TypeDocument } from '@interfaces/expense'
 import { cn, removeAccents, valuesFormData } from '@lib/utils'
-import { Button } from '@mui/material'
 import { createExpense, getOcrExpense } from '@services/expense'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
@@ -116,7 +116,7 @@ export const SingleStep = () => {
 
         <FormCreateExpense index={0} loading={loading} getDataOcr={getDataOcr} className="mt-5" />
         <div className={cn('flex justify-end mt-10', loading && 'opacity-50')}>
-          <Button type="submit" variant="contained">
+          <Button type="submit" disabled={isPending}>
             Crear Gasto
           </Button>
         </div>

@@ -1,9 +1,9 @@
 import { StepData, stepSchemaCreateSpend } from '@components/corporation/expenses/forms/FormCreateExpense'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Category, Currency, IExpense, TypeDocument } from '@interfaces/expense'
-import { Divider } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { FormShowExpense } from '../forms/FormShowExpense'
+import { Divider } from '@components/ui/divider'
 
 export const ShowStep = ({ data }: { data: IExpense }) => {
   const stepsData: StepData = {

@@ -4,13 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useToggle } from '@hooks/useToggle'
 import { Category, Currency, IExpense, TypeDocument } from '@interfaces/expense'
 import { cn, removeAccents } from '@lib/utils'
-import { Button } from '@mui/material'
 import { editExpense, getOcrExpense } from '@services/expense'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '@components/ui/button'
 
 export const EditStep = ({ data }: { data: IExpense }) => {
   const stepsData: StepData = {
@@ -157,7 +157,7 @@ export const EditStep = ({ data }: { data: IExpense }) => {
 
         <FormCreateExpense index={0} loading={loading} getDataOcr={getDataOcr} className="mt-5" />
         <div className={cn('flex justify-end mt-10', loading && 'opacity-50')}>
-          <Button type="submit" variant="contained">
+          <Button type="submit" disabled={isPending}>
             {data?.status === 'IN_REVIEW' ? 'Terminar Revisión' : 'Actualizar Gasto'}
           </Button>
         </div>

@@ -1,11 +1,11 @@
 import { StepData, FormCreateExpense, stepSchemaCreateSpend } from '@components/corporation/expenses/forms/FormCreateExpense'
 import { Spinner } from '@components/shared'
 import { FileUploadMultiple } from '@components/shared/Files/FileUploadMultiple'
+import { Button } from '@components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useToggle } from '@hooks/useToggle'
 import { TypeDocument } from '@interfaces/expense'
 import { removeAccents } from '@lib/utils'
-import { Button } from '@mui/material'
 import { createExpense, getOcrExpense } from '@services/expense'
 import { useMutation } from '@tanstack/react-query'
 import { Watch } from 'lucide-react'
@@ -53,7 +53,7 @@ export const MultipleStep = () => {
         <div className="mt-5">
           <FileUploadMultiple files={files} setFiles={setFiles} />
           <div className="flex justify-end mt-5">
-            <Button type="button" variant="contained" onClick={handleSelect} disabled={files?.length === 0}>
+            <Button type="button" onClick={handleSelect} disabled={files?.length === 0}>
               Cargar
             </Button>
           </div>
