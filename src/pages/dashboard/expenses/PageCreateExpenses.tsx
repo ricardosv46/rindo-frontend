@@ -1,8 +1,8 @@
 import { MultipleStep } from '@components/corporation/expenses/steps/MultipleStep'
 import { SingleStep } from '@components/corporation/expenses/steps/SingleStep'
+import { Button } from '@components/ui/button'
 import { Image } from '@icons/Image'
 import { Images } from '@icons/Images'
-import { Button } from '@mui/material'
 import { useState } from 'react'
 
 const PageCreateExpenses = () => {

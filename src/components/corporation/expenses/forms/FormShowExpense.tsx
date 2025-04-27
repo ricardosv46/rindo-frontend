@@ -1,14 +1,9 @@
-import { FileUpload, InputSelect, InputText } from '@components/shared'
-import { InputPicker } from '@components/shared/Inputs/InputPicker'
+import { FileUpload } from '@components/shared'
 import { ReadOnlyField } from '@components/shared/ReadOnlyField/ReadOnlyField'
-import { categories } from '@constants/categories'
-import { currencies } from '@constants/currencies'
-import { typeDocuments } from '@constants/typeDocuments'
 import { Category, Currency, TypeDocument } from '@interfaces/expense'
-import { cn, formatNumber, formatNumberInline, onlyNumbers } from '@lib/utils'
-import { HtmlHTMLAttributes, useEffect } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
-import { z } from 'zod'
+import { cn, formatNumber } from '@lib/utils'
+import { HtmlHTMLAttributes } from 'react'
+import { useFormContext } from 'react-hook-form'
 
 export type StepData = {
   loadedFile?: boolean
@@ -90,51 +85,34 @@ export const FormShowExpense = ({ className }: IFormShowExpense) => {
         </div>
 
         <div className="grid w-full grid-cols-2 gap-5 px-5 ">
-          <Controller
+          <FileUpload
+            control={control}
+            label="Comprobante"
             name="filePreview"
-            control={control}
-            render={({ field }) => (
-              <FileUpload
-                label="Comprobante"
-                name="filePreview"
-                value={filePreview}
-                file={file}
-                onFileChange={() => {}}
-                disabledClose
-                errors={errors}
-              />
-            )}
+            value={filePreview}
+            file={file}
+            onFileChange={() => {}}
+            disabledClose
           />
-          <Controller
-            name="fileVisaPreview"
+
+          <FileUpload
             control={control}
-            render={({ field }) => (
-              <FileUpload
-                label="Estado de cuenta visa"
-                name="fileVisaPreview"
-                value={fileVisaPreview}
-                file={fileVisa}
-                onFileChange={() => {}}
-                disabledClose
-                errors={errors}
-              />
-            )}
+            label="Estado de cuenta visa"
+            name="fileVisaPreview"
+            value={fileVisaPreview}
+            file={fileVisa}
+            onFileChange={() => {}}
+            disabledClose
           />
           {((total && Number(total || 0) >= 1500 && retention === 0) || fileRxhPreview) && (
-            <Controller
-              name="fileRxhPreview"
+            <FileUpload
               control={control}
-              render={({ field }) => (
-                <FileUpload
-                  label="Suspención de 4ta categoría"
-                  name="fileRxhPreview"
-                  value={fileRxhPreview}
-                  file={fileRxh}
-                  onFileChange={() => {}}
-                  disabledClose
-                  errors={errors}
-                />
-              )}
+              label="Suspención de 4ta categoría"
+              name="fileRxhPreview"
+              value={fileRxhPreview}
+              file={fileRxh}
+              onFileChange={() => {}}
+              disabledClose
             />
           )}
         </div>

@@ -2,7 +2,6 @@ import { IconButtonPurple, Chip } from '@components/shared'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconBell } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
-import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material'
 import { useToggle } from '@hooks/useToggle'
 
 export const Notification = () => {
@@ -25,9 +24,9 @@ export const Notification = () => {
 
   const [age, setAge] = useState('')
 
-  const handleChange = (event: SelectChangeEvent) => {
-    setAge(event.target.value as string)
-  }
+  // const handleChange = (event: SelectChangeEvent) => {
+  //   setAge(event.target.value as string)
+  // }
 
   return (
     <div className="sm:relative " ref={dropdownRef}>
@@ -42,14 +41,14 @@ export const Notification = () => {
         <div className="p-4">
           <p className="font-semibold">Todas tus notificaciones</p>
 
-          <FormControl fullWidth sx={{ marginTop: 2 }}>
+          {/* <FormControl fullWidth sx={{ marginTop: 2 }}>
             <InputLabel id="demo-simple-select-label">Age</InputLabel>
             <Select labelId="demo-simple-select-label" id="demo-simple-select" value={age} label="Age" onChange={handleChange}>
               <MenuItem value={10}>Ten</MenuItem>
               <MenuItem value={20}>Twenty</MenuItem>
               <MenuItem value={30}>Thirty</MenuItem>
             </Select>
-          </FormControl>
+          </FormControl> */}
         </div>
 
         <ScrollArea className="h-[447px]">

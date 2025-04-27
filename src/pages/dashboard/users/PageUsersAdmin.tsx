@@ -1,21 +1,10 @@
 import { ModalCreateCorporation, ModalDeleteCorporation } from '@components/admin'
-import { Chip, Show, Spinner } from '@components/shared'
+import { Chip, CustomTooltip, FormSearchInput, Show, Spinner, TablePagination } from '@components/shared'
+import { Button } from '@components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@components/ui/table'
 import { useToggle } from '@hooks/useToggle'
 import { IUser } from '@interfaces/user'
-import {
-  Fab,
-  IconButton,
-  InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Tooltip
-} from '@mui/material'
+
 import { getUsers } from '@services/user'
 import { IconTrash } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
@@ -28,14 +17,20 @@ import {
   getPaginationRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { Plus, SearchIcon } from 'lucide-react'
-import { useState } from 'react'
+import { Plus, SearchIcon, Trash } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 
 const PageUsersAdmin = () => {
   const [isOpenModalCreate, openModalCreate, closeModalCreate] = useToggle()
   const [isOpenModalDelete, openModalDelete, closeModalDelete] = useToggle()
   const [dataSelected, setDataSelected] = useState<IUser | null>(null)
-  const { data: users = [], isLoading } = useQuery({
+  const [filteredUsers, setFilteredUsers] = useState<IUser[]>([])
+  const {
+    data: users = [],
+    isLoading,
+    isFetching
+  } = useQuery({
     queryKey: ['getUsers'],
     queryFn: getUsers
   })
@@ -80,72 +75,121 @@ const PageUsersAdmin = () => {
           openModalDelete()
         }
         return (
-          <IconButton onClick={handleDelete}>
-            <IconTrash className="text-primary-600" />
-          </IconButton>
+          <CustomTooltip title="Eliminar">
+            <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={handleDelete}>
+              <Trash className={'text-red-600'} />
+            </Button>
+          </CustomTooltip>
         )
       }
     }
   ]
 
-  const [globalFilter, setGlobalFilter] = useState('')
-  const { getHeaderGroups, getRowModel, setPageSize, getRowCount, getState, setPageIndex } = useReactTable({
+  const initialValues = {
+    search: ''
+  }
+  const { watch, control, handleSubmit, reset } = useForm({
+    defaultValues: initialValues
+  })
+
+  const { search } = watch()
+
+  const filteredData = () => {
+    if (isFetching) return []
+
+    const newData = users.filter((companie) => {
+      const searchMatch =
+        companie.name?.toLowerCase().includes(search.toLocaleLowerCase()) ||
+        companie.email?.toLowerCase().includes(search.toLocaleLowerCase())
+
+      return searchMatch
+    })
+
+    return newData
+  }
+  const {
+    getHeaderGroups,
+    getRowModel,
+    setPageSize,
+    getRowCount,
+    getState,
+    setPageIndex,
+    getPageCount,
+    firstPage,
+    previousPage,
+    nextPage,
+    lastPage
+  } = useReactTable({
     data: users,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    state: {
-      globalFilter: globalFilter
-    },
-    onGlobalFilterChange: setGlobalFilter
+    getPaginationRowModel: getPaginationRowModel()
   })
+
+  const onSubmit = () => {
+    setFilteredUsers(filteredData())
+  }
+
+  const onClearFilter = () => {
+    setFilteredUsers(users || [])
+    reset(initialValues)
+  }
+
+  const handleChangePageSize = (value: string) => {
+    setPageSize(Number(value))
+  }
+
+  useEffect(() => {
+    if (isFetching) return
+    setFilteredUsers(users)
+  }, [isFetching])
 
   return (
     <Show condition={isLoading} loadingComponent={<Spinner />}>
-      <div className="flex justify-between">
-        <TextField
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          size="small"
-          sx={{ pb: 3 }}
-          name="Buscar"
-          placeholder="Buscar"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              )
-            }
-          }}
-        />
-        <Tooltip title="Crear Corporativo">
-          <Fab color="primary" onClick={openModalCreate} size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
-            <Plus className="w-5 h-5" />
-          </Fab>
-        </Tooltip>
-      </div>
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-800">Corporativos</h2>
 
-      <TableContainer sx={{ width: 'calc(100% + 48px)', marginX: '-24px', pb: 3 }}>
-        <Table sx={{ minWidth: 750 }} aria-label="customized table">
-          <TableHead>
+          <div className="flex items-center gap-2">
+            <Button type="button" className="gap-1" onClick={openModalCreate}>
+              <Plus className="w-4 h-4" />
+              Nueva Corporativo
+            </Button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col justify-between gap-3 sm:flex-row">
+          <div className="flex items-center gap-2">
+            <FormSearchInput className="w-60" name="search" control={control} placeholder="Buscar" />
+
+            <Button type="submit" className="w-24 gap-1">
+              <span>Filtrar</span>
+            </Button>
+            <Button className="w-24 gap-1" color="red" type="button" onClick={onClearFilter}>
+              <span>Limpiar</span>
+            </Button>
+          </div>
+        </form>
+      </div>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-gray-50 hover:bg-gray-50">
             {getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableCell key={header.id} component="th">
+                  <TableHead key={header.id}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableCell>
+                  </TableHead>
                 ))}
               </TableRow>
             ))}
-          </TableHead>
-          <TableBody>
+          </TableHeader>
+
+          <TableBody className="hover:bg-gray-50">
             {getRowModel().rows?.map((row) => (
-              <TableRow hover key={row.id}>
+              <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} component="td" scope="row">
+                  <TableCell className="font-medium" key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -153,21 +197,20 @@ const PageUsersAdmin = () => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
+      </div>
       <TablePagination
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-        rowsPerPageOptions={[3, 5, 10]}
-        component="div"
-        count={getRowCount()}
-        rowsPerPage={getState().pagination.pageSize}
-        page={getState().pagination.pageIndex}
-        onPageChange={(e, newPage) => setPageIndex(newPage)}
-        onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
+        total={getRowCount()}
+        pageIndex={getState().pagination.pageIndex + 1}
+        totalPages={getPageCount()}
+        pageSize={String(getState().pagination.pageSize)}
+        onChangePageSize={handleChangePageSize}
+        onFirst={firstPage}
+        onPrevious={previousPage}
+        onNext={nextPage}
+        onLast={lastPage}
       />
 
       <ModalCreateCorporation {...{ isOpen: isOpenModalCreate, onClose: closeModalCreate }} />
-
       <ModalDeleteCorporation {...{ isOpen: isOpenModalDelete, onClose: closeModalDelete, data: dataSelected }} />
     </Show>
   )

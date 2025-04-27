@@ -1,16 +1,15 @@
 import React from 'react'
 import { useForm, Controller } from 'react-hook-form'
-import { TextField, Button } from '@mui/material'
-import * as yup from 'yup'
-import { yupResolver } from '@hookform/resolvers/yup'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Button } from '@components/ui/button'
+import { FormInput } from '@components/shared'
 
-interface FormValues {
-  email: string
-}
-
-const validationSchema = yup.object().shape({
-  email: yup.string().email('Correo invalido').required('El correo es requerido')
+const validationSchema = z.object({
+  email: z.string().email('Correo invalido').min(1, 'El correo es requerido')
 })
+
+type FormValues = z.infer<typeof validationSchema>
 
 export const FormForgotPassword = () => {
   const {
@@ -18,7 +17,7 @@ export const FormForgotPassword = () => {
     control,
     formState: { errors }
   } = useForm<FormValues>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       email: ''
     }
@@ -30,16 +29,9 @@ export const FormForgotPassword = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-      <Controller
-        name="email"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} color="primary" type="email" label="Correo" error={!!errors.email} helperText={errors.email?.message} />
-        )}
-      />
-      <Button type="submit" variant="contained">
-        Enviar
-      </Button>
+      <FormInput control={control} name="email" label="Correo" />
+
+      <Button type="submit">Enviar</Button>
     </form>
   )
 }

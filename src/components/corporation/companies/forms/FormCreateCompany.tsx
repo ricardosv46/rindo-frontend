@@ -1,33 +1,32 @@
-import { yupResolver } from '@hookform/resolvers/yup'
+import { FormInput } from '@components/shared'
+import { Button } from '@components/ui/button'
+import { Divider } from '@components/ui/divider'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useToggle } from '@hooks/useToggle'
-import { Button, Divider, IconButton, InputAdornment, TextField } from '@mui/material'
+import { onlyNumbers } from '@lib/utils'
 import { createCompany } from '@services/company'
-import { IconEye, IconEyeOff } from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import * as yup from 'yup'
 
-export interface IFormCreateCompany {
-  ruc: string
-  name: string
-  username: string
-  password: string
-}
-
-const validationSchema = yup.object().shape({
-  ruc: yup
+const validationSchema = z.object({
+  ruc: z
     .string()
-    .matches(/^\d+$/, 'El ruc solo puede contener números ')
-    .length(11, 'El ruc tener exactamente 11 dígitos')
-    .required('El ruc es requerido'),
-  name: yup.string().required('El nombre es requerido'),
-  username: yup.string().required('El usuario es requerido'),
-  password: yup.string().min(6, 'La contraseña debe tener al menos 6 caracteres').required('La contraseña es requerida')
+    .regex(/^\d+$/, 'El ruc solo puede contener números')
+    .length(11, 'El ruc debe tener exactamente 11 dígitos')
+    .min(1, 'El ruc es requerido'),
+  name: z.string().min(1, 'El nombre es requerido'),
+  username: z.string().min(1, 'El usuario es requerido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').min(1, 'La contraseña es requerida')
 })
+
+type IFormCreateCompany = z.infer<typeof validationSchema>
+
 interface FormCreateCompanyProps {
   onClose: () => void
 }
+
 export const FormCreateCompany = ({ onClose }: FormCreateCompanyProps) => {
   const [isOpenPassword, , , togglePassword] = useToggle()
 
@@ -36,7 +35,7 @@ export const FormCreateCompany = ({ onClose }: FormCreateCompanyProps) => {
     control,
     formState: { errors }
   } = useForm<IFormCreateCompany>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       ruc: '',
       name: '',
@@ -48,6 +47,7 @@ export const FormCreateCompany = ({ onClose }: FormCreateCompanyProps) => {
   const onSubmit = async (values: IFormCreateCompany) => {
     mutateCreate(values)
   }
+
   const queryClient = useQueryClient()
   const { mutate: mutateCreate, isPending } = useMutation({
     mutationFn: createCompany,
@@ -62,86 +62,14 @@ export const FormCreateCompany = ({ onClose }: FormCreateCompanyProps) => {
   })
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto">
-      <Controller
-        name="ruc"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Ruc"
-            size="small"
-            error={!!errors.ruc}
-            helperText={errors.ruc?.message}
-            slotProps={{
-              htmlInput: { maxLength: 11 }
-            }}
-          />
-        )}
-      />
-      <Controller
-        name="name"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Nombre"
-            size="small"
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-        )}
-      />
-      <Controller
-        name="username"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Usuario"
-            size="small"
-            error={!!errors.username}
-            helperText={errors.username?.message}
-          />
-        )}
-      />
-
-      <Controller
-        name="password"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type={isOpenPassword ? 'text' : 'password'}
-            label="Contraseña"
-            size="small"
-            autoComplete="off"
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="start">
-                    <IconButton onClick={togglePassword} edge="end">
-                      {!isOpenPassword ? <IconEye className="text-primary-600" /> : <IconEyeOff className="text-primary-600" />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }
-            }}
-          />
-        )}
-      />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3 px-1 max-h-[calc(100vh-150px)] py-2 overflow-y-auto ">
+      <FormInput name="ruc" control={control} label="Ruc" formatText={onlyNumbers} maxLength={11} />
+      <FormInput name="name" control={control} label="Nombre" />
+      <FormInput name="username" control={control} label="Usuario" />
+      <FormInput name="password" control={control} label="Contraseña" type="password" />
 
       <Divider />
-      <Button type="submit" variant="contained" disabled={isPending}>
+      <Button type="submit" disabled={isPending}>
         Crear
       </Button>
     </form>

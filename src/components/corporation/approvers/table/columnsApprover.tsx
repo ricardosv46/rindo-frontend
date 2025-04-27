@@ -1,14 +1,12 @@
-import { createColumnHelper } from '@tanstack/react-table'
-import { IUser } from '@interfaces/user'
-import { Chip, CustomTooltip } from '@components/shared'
-import { IconButton } from '@mui/material'
-import { IconTrash } from '@tabler/icons-react'
-import { Eye, EyeIcon, Trash } from 'lucide-react'
-import { useToggle } from '@hooks/useToggle'
-import { useEffect, useRef } from 'react'
 import { cn, ROLES } from '@/lib/utils'
-import { IArea } from '@interfaces/area'
+import { Chip, CustomTooltip } from '@components/shared'
 import { Button } from '@components/ui/button'
+import { useToggle } from '@hooks/useToggle'
+import { IArea } from '@interfaces/area'
+import { IUser } from '@interfaces/user'
+import { createColumnHelper } from '@tanstack/react-table'
+import { Eye, Trash } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 
 const columnHelper = createColumnHelper<IUser>()
 

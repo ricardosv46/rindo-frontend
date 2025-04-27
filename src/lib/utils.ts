@@ -51,7 +51,7 @@ export const formatNumberInline = (input: string): string => {
 }
 
 export const formatNumber = (input: string): string => {
-  return Number(input.replaceAll(',', '') ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })
+  return Number(input.replace(/,/g, '') ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })
 }
 
 export const valuesFormData = <T>(data: T) => {

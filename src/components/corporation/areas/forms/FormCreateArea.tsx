@@ -2,35 +2,34 @@ import { FormInput } from '@components/shared'
 import { FormSelect, Option } from '@components/shared/Forms/FormSelect'
 import { Button } from '@components/ui/button'
 import { Divider } from '@components/ui/divider'
-import { yupResolver } from '@hookform/resolvers/yup'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { ICompany } from '@interfaces/company'
 import { createArea } from '@services/area'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import * as yup from 'yup'
+import { z } from 'zod'
 
-export interface IFormCreateArea {
-  name: string
-  company: string
-}
-
-const validationSchema = yup.object().shape({
-  name: yup.string().required('El nombre es requerido'),
-  company: yup.string().required('La empresa es requerida')
+const validationSchema = z.object({
+  name: z.string().min(1, 'El nombre es requerido'),
+  company: z.string().min(1, 'La empresa es requerida')
 })
+
+type IFormCreateArea = z.infer<typeof validationSchema>
+
 interface FormCreateAreaProps {
   onClose: () => void
   companies: ICompany[]
 }
+
 export const FormCreateArea = ({ onClose, companies }: FormCreateAreaProps) => {
   const {
     handleSubmit,
     control,
     formState: { errors }
   } = useForm<IFormCreateArea>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       name: '',
       company: ''
@@ -41,6 +40,7 @@ export const FormCreateArea = ({ onClose, companies }: FormCreateAreaProps) => {
     console.log({ values })
     mutateCreate({ ...values })
   }
+
   const queryClient = useQueryClient()
   const { mutate: mutateCreate, isPending } = useMutation({
     mutationFn: createArea,

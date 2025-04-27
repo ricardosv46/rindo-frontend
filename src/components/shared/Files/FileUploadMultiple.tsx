@@ -2,7 +2,6 @@ import { DocumentIcon } from '@icons/DocumentIcon'
 import { UploadIcon } from '@icons/UploadIcon'
 import { cn } from '@lib/utils'
 import { CircleX } from 'lucide-react'
-import { useState } from 'react'
 import { toast } from 'react-toastify'
 interface FileUploadMultiple {
   files: File[]

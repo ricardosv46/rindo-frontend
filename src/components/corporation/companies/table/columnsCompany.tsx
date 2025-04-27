@@ -1,7 +1,8 @@
-import { createColumnHelper } from '@tanstack/react-table'
+import { CustomTooltip } from '@components/shared'
+import { Button } from '@components/ui/button'
 import { ICompany } from '@interfaces/company'
-import { IconButton } from '@mui/material'
-import { IconTrash } from '@tabler/icons-react'
+import { createColumnHelper } from '@tanstack/react-table'
+import { Trash } from 'lucide-react'
 
 const columnHelper = createColumnHelper<ICompany>()
 
@@ -39,11 +40,11 @@ export const columnsCompany = (setDataSelected: (data: ICompany | null) => void,
       }
 
       return (
-        <div className="flex gap-5">
-          <IconButton onClick={handleDelete}>
-            <IconTrash className="text-primary-600" />
-          </IconButton>
-        </div>
+        <CustomTooltip title="Eliminar">
+          <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={handleDelete}>
+            <Trash className={'text-red-600'} />
+          </Button>
+        </CustomTooltip>
       )
     }
   }

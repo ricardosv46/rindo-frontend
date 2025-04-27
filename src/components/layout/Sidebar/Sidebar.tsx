@@ -1,5 +1,4 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Button, colors, Icon, IconButton, ToggleButton } from '@mui/material'
 import { useSidebar } from '@store/sidebar'
 import { ChevronDown, LayoutDashboard, Settings, Users } from 'lucide-react'
 import { useAuth } from '@store/auth'
@@ -7,6 +6,7 @@ import { useToggle } from '@hooks/useToggle'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Role } from '@interfaces/user'
 import { ROLES } from '@/lib/utils'
+import { Button } from '@components/ui/button'
 
 type MenuItem = {
   icon: React.ReactNode
@@ -72,17 +72,11 @@ export const MenuItem = ({ item, isExpanded, depth = 0 }: { item: MenuItem; isEx
   const location = useLocation()
 
   const hasSubItems = item.subItems && item.subItems.length > 0
-
+  const variant = location?.pathname === item?.url ? 'default' : 'ghost-colored'
   return (
     <div className="w-full ">
       <Link to={item.url} className="w-full">
-        <Button
-          sx={{
-            padding: location?.pathname === item?.url ? '6px 8px' : 'auto'
-          }}
-          variant={location?.pathname === item?.url ? 'contained' : 'text'}
-          className={`w-full flex justify-between ${depth > 0 ? 'pl-8' : ''}`}
-          onClick={toggleSubMenu}>
+        <Button variant={variant} className={`w-full flex justify-between`} onClick={toggleSubMenu}>
           <div className="flex items-center justify-between w-full ">
             <div className="flex items-center h-[24.5px] ">
               {item.icon}
@@ -114,7 +108,7 @@ export const Sidebar = () => {
   return (
     <div
       className={`h-full inset-y-0 left-0 z-50 flex flex-col bg-background border-r transition-all duration-300 ease-in-out overflow-hidden ${
-        isExpanded ? 'w-64' : 'w-16'
+        isExpanded ? 'w-64' : 'w-20'
       }`}>
       {isExpanded && <p className="p-4 font-bold ftext-lg text-primary-600">{ROLES[user?.role!]}</p>}
       {!isExpanded && <span className="p-7"></span>}

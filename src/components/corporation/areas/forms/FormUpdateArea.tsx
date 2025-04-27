@@ -1,32 +1,32 @@
 import { FormInput } from '@components/shared'
 import { Button } from '@components/ui/button'
 import { Divider } from '@components/ui/divider'
-import { yupResolver } from '@hookform/resolvers/yup'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { IArea } from '@interfaces/area'
 import { updateArea } from '@services/area'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import * as yup from 'yup'
+import { z } from 'zod'
 
-export interface IFormUpdateArea {
-  name: string
-}
-
-const validationSchema = yup.object().shape({
-  name: yup.string().required('El nombre es requerido')
+const validationSchema = z.object({
+  name: z.string().min(1, 'El nombre es requerido')
 })
+
+type IFormUpdateArea = z.infer<typeof validationSchema>
+
 interface FormUpdateAreaProps {
   onClose: () => void
   data?: IArea | null
 }
+
 export const FormUpdateArea = ({ onClose, data }: FormUpdateAreaProps) => {
   const {
     handleSubmit,
     control,
     formState: { errors }
   } = useForm<IFormUpdateArea>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       name: data?.name
     }
@@ -35,6 +35,7 @@ export const FormUpdateArea = ({ onClose, data }: FormUpdateAreaProps) => {
   const onSubmit = async (values: IFormUpdateArea) => {
     mutateUpdate({ ...values, id: data?._id })
   }
+
   const queryClient = useQueryClient()
   const { mutate: mutateUpdate, isPending } = useMutation({
     mutationFn: updateArea,

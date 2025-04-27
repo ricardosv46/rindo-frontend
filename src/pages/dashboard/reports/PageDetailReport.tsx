@@ -40,10 +40,10 @@ export interface IFormReport {
 }
 
 export const validationSchema = z.object({
-  search: z.string().optional(),
-  expenses: z.array(z.string()).optional(),
-  comment: z.string().optional(),
-  title: z.string().optional()
+  search: z.string(),
+  expenses: z.array(z.string()),
+  comment: z.string(),
+  title: z.string()
 })
 
 const PageDetailReport = () => {
@@ -195,7 +195,7 @@ const PageDetailReport = () => {
       columns: columnsExpenseByReport({
         setDataSelectedFile,
         openModalFile,
-        dataSelected: expenses,
+        dataSelected: expenses || [],
         setDataSelected: handleSeletedForm,
         filteredExpenses: filteredData,
         selection: validateSelection,
@@ -225,7 +225,7 @@ const PageDetailReport = () => {
   const totals = calculateTotals()
 
   const handleApproveExpenses = () => {
-    mutateEditStatus({ id: report?._id, status: 'APPROVED', expenses })
+    mutateEditStatus({ id: report?._id, status: 'APPROVED', expenses: expenses || [] })
   }
 
   const handleModalRejectExpenses = () => {
@@ -235,7 +235,12 @@ const PageDetailReport = () => {
   }
 
   const handleRejectExpenses = () => {
-    mutateEditStatus({ id: report?._id, status: 'REJECTED', expenses, comment })
+    mutateEditStatus({
+      id: report?._id,
+      status: 'REJECTED',
+      expenses: expenses || [],
+      comment: comment || ''
+    })
   }
 
   const handleModalReviewExpenses = () => {
@@ -245,7 +250,12 @@ const PageDetailReport = () => {
   }
 
   const handleReviewExpenses = () => {
-    mutateEditStatus({ id: report?._id, status: 'IN_REVIEW', expenses, comment })
+    mutateEditStatus({
+      id: report?._id,
+      status: 'IN_REVIEW',
+      expenses: expenses || [],
+      comment: comment || ''
+    })
   }
 
   const onSubmitModal = async (values: IFormReport) => {

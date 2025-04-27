@@ -1,26 +1,20 @@
-import React, { useEffect } from 'react'
-import { useForm, Controller } from 'react-hook-form'
-import { Button, TextField } from '@mui/material'
-import * as yup from 'yup'
-import { yupResolver } from '@hookform/resolvers/yup'
+import { FormInput } from '@components/shared'
+import { Button } from '@components/ui/button'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
 
-interface FormValues {
-  name: string
-  lastname: string
-  identityDocument: string
-  phone: string
-  email: string
-  password: string
-}
-
-const validationSchema = yup.object().shape({
-  name: yup.string().required('El nombre es requerido'),
-  lastname: yup.string().required('El apellido es requerido'),
-  identityDocument: yup.string().min(8, 'El documento debe tener al menos 8 dígitos').required('El documento de identidad es requerido'),
-  phone: yup.string().min(8, 'El teléfono debe tener al menos 8 dígitos').required('El teléfono es requerido'),
-  email: yup.string().email('Correo invalido').required('El correo es requerido'),
-  password: yup.string().min(8, 'La contraseña debe tener al menos 8 caracteres').required('La contraseña es requerida')
+const validationSchema = z.object({
+  name: z.string().min(1, 'El nombre es requerido'),
+  lastname: z.string().min(1, 'El apellido es requerido'),
+  identityDocument: z.string().min(8, 'El documento debe tener al menos 8 dígitos').min(1, 'El documento de identidad es requerido'),
+  phone: z.string().min(8, 'El teléfono debe tener al menos 8 dígitos').min(1, 'El teléfono es requerido'),
+  email: z.string().email('Correo invalido').min(1, 'El correo es requerido'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').min(1, 'La contraseña es requerida')
 })
+
+type FormValues = z.infer<typeof validationSchema>
 
 export const FormRegister = () => {
   const {
@@ -30,7 +24,7 @@ export const FormRegister = () => {
     watch,
     formState: { errors }
   } = useForm<FormValues>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       name: '',
       lastname: '',
@@ -56,56 +50,14 @@ export const FormRegister = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-      <Controller
-        name="name"
-        control={control}
-        render={({ field }) => <TextField {...field} label="Nombres" error={!!errors.name} helperText={errors.name?.message} />}
-      />
+      <FormInput control={control} name="name" label="Nombres" />
+      <FormInput control={control} name="lastname" label="Apellidos" />
+      <FormInput control={control} name="identityDocument" label="Documento de Identidad" />
+      <FormInput control={control} name="phone" label="Teléfono" />
+      <FormInput control={control} name="email" label="Correo" />
+      <FormInput control={control} name="password" label="Contraseña" type="password" />
 
-      <Controller
-        name="lastname"
-        control={control}
-        render={({ field }) => <TextField {...field} label="Apellidos" error={!!errors.lastname} helperText={errors.lastname?.message} />}
-      />
-
-      <Controller
-        name="identityDocument"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            label="Documento de Identidad"
-            error={!!errors.identityDocument}
-            helperText={errors.identityDocument?.message}
-          />
-        )}
-      />
-
-      <Controller
-        name="phone"
-        control={control}
-        render={({ field }) => <TextField {...field} label="Teléfono" error={!!errors.phone} helperText={errors.phone?.message} />}
-      />
-
-      <Controller
-        name="email"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} type="email" label="Correo" error={!!errors.email} helperText={errors.email?.message} />
-        )}
-      />
-
-      <Controller
-        name="password"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} type="password" label="Contraseña" error={!!errors.password} helperText={errors.password?.message} />
-        )}
-      />
-
-      <Button type="submit" variant="contained">
-        Registrarse
-      </Button>
+      <Button type="submit">Registrarse</Button>
     </form>
   )
 }

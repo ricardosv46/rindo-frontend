@@ -50,12 +50,16 @@ const PageAreas = () => {
   // const debouncedSearchTerm = useDebounce(search, 300)
 
   const filteredData = () => {
-    return areas.filter((area) => {
+    if (isFetchingAreas) return []
+
+    const newData = areas.filter((area) => {
       const term = search?.toLowerCase() ?? ''
       const companyMatch = company === 'all' || area.company?._id === company
       const searchMatch = area.name?.toLowerCase().includes(term) || area.company?.name?.toLowerCase().includes(term)
       return companyMatch && searchMatch
     })
+
+    return newData
   }
 
   const {

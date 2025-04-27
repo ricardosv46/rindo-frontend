@@ -2,7 +2,8 @@ import { FormSelect } from '@components/shared'
 import { Option } from '@components/shared/Forms/FormSelect'
 import { Button } from '@components/ui/button'
 import { Divider } from '@components/ui/divider'
-import { yupResolver } from '@hookform/resolvers/yup'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { IArea } from '@interfaces/area'
 import { IUser } from '@interfaces/user'
 import { addApprover } from '@services/area'
@@ -10,16 +11,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import * as yup from 'yup'
 
-export interface IFormCreateApprover {
-  email: string
-  approver?: string
-}
-
-const validationSchema = yup.object().shape({
-  email: yup.string().required('El correo es requerido')
+const validationSchema = z.object({
+  email: z.string().min(1, 'El correo es requerido')
 })
+
+type IFormCreateApprover = z.infer<typeof validationSchema>
+
 interface FormCreateApproverProps {
   onClose: () => void
   company: string
@@ -27,6 +25,7 @@ interface FormCreateApproverProps {
   users: IUser[]
   areas: IArea[]
 }
+
 export const FormAddApprover = ({ onClose, company, area, areas, users }: FormCreateApproverProps) => {
   const {
     watch,
@@ -35,7 +34,7 @@ export const FormAddApprover = ({ onClose, company, area, areas, users }: FormCr
     setValue,
     formState: { errors }
   } = useForm<IFormCreateApprover>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       email: ''
     }

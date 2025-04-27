@@ -1,7 +1,7 @@
 import { Card, Modal } from '@components/shared'
-import { Divider } from '@mui/material'
 import React from 'react'
 import { FormCreateCompany } from '../forms/FormCreateCompany'
+import { Divider } from '@components/ui/divider'
 Animation
 interface IModalCreateCompany {
   isOpen: boolean
@@ -12,8 +12,8 @@ export const ModalCreateCompany = ({ isOpen, onClose }: IModalCreateCompany) => 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <Card className="w-[400px] max-h-[95vh] overflow-hidden">
-        <p className="pb-6">Crear Empresa</p>
-        <Divider sx={{ width: 'calc(100% + 48px)', marginX: '-24px', mb: 4 }} />
+        <p className="">Crear Empresa</p>
+        <Divider className="w-[calc(100%+48px)] -mx-6  my-4" />
         <FormCreateCompany onClose={onClose} />
       </Card>
     </Modal>

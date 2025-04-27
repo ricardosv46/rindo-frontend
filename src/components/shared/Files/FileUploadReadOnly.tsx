@@ -1,13 +1,9 @@
-import { UploadIcon } from '@icons/UploadIcon'
-import { cn, delay } from '@lib/utils'
-import { FormControl, FormHelperText } from '@mui/material'
-import { CircleX } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { FieldErrors } from 'react-hook-form'
-import { toast } from 'react-toastify'
-import { Spinner } from '../Spinner/Spinner'
 import { useToggle } from '@hooks/useToggle'
+import { UploadIcon } from '@icons/UploadIcon'
+import { cn } from '@lib/utils'
+import { useEffect, useState } from 'react'
 import { Show } from '../Show/Show'
+import { Spinner } from '../Spinner/Spinner'
 
 interface IFileUpload {
   value?: string

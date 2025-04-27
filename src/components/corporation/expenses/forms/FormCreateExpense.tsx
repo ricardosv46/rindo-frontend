@@ -40,22 +40,20 @@ export const stepSchemaCreateSpend = z
       .regex(/^\d+$/, 'El RUC solo puede contener números.'),
     companyName: z.string().min(1, 'El Razón social es obligatoria.'),
     description: z.string().min(1, 'La descripción es obligatoria.'),
-    category: z.string().min(1, 'La categoría es obligatoria.'),
+    category: z.string().min(1, 'La categoría es obligatoria.') as unknown as z.ZodType<Category>,
     total: z.string().min(1, 'El totaldata es obligatorio.'),
-    currency: z.string().min(1, 'La moneda es obligatoria.'),
+    currency: z.string().min(1, 'La moneda es obligatoria.') as unknown as z.ZodType<Currency>,
     serie: z.string().optional(),
     rus: z.boolean().optional(),
     retention: z.number().optional(),
     // date: z.string().min(1, 'La fecha de emisión es obligatoria.'),
     date: z
-      .date({
-        required_error: 'La fecha de emisión es obligatoria',
-        invalid_type_error: 'La fecha de emisión es obligatoria'
-      })
+      .string()
+      .min(1, 'La fecha de emisión es obligatoria')
       .refine((date) => !dayjs(date).isAfter(dayjs()), {
         message: 'La fecha no puede ser mayor a la fecha actual'
       }),
-    typeDocument: z.string().min(1, 'El tipo de documento es obligatorio.'),
+    typeDocument: z.string().min(1, 'El tipo de documento es obligatorio.') as unknown as z.ZodType<TypeDocument>,
     file: z.instanceof(File),
     filePreview: z.string().min(1, 'El archivo es obligatorio.'),
     fileVisa: z.instanceof(File).optional(),
@@ -178,49 +176,33 @@ export const FormCreateExpense = ({ index, multiple, loading, className, getData
         </div>
 
         <div className="grid w-full grid-cols-2 gap-5 px-5 ">
-          <Controller
+          <FileUpload
+            label="Comprobante"
             name="filePreview"
             control={control}
-            render={({ field }) => (
-              <FileUpload
-                label="Comprobante"
-                name="filePreview"
-                value={filePreview}
-                file={file}
-                getDataOcr={getDataOcr}
-                onFileChange={handleFileChange}
-                errors={errors}
-              />
-            )}
+            value={filePreview}
+            file={file}
+            getDataOcr={getDataOcr}
+            onFileChange={handleFileChange}
           />
-          <Controller
-            name="fileVisaPreview"
+
+          <FileUpload
             control={control}
-            render={({ field }) => (
-              <FileUpload
-                label="Estado de cuenta visa"
-                name="fileVisaPreview"
-                value={fileVisaPreview}
-                file={fileVisa}
-                onFileChange={handleFileChangeVisa}
-                errors={errors}
-              />
-            )}
+            label="Estado de cuenta visa"
+            name="fileVisaPreview"
+            value={fileVisaPreview}
+            file={fileVisa}
+            onFileChange={handleFileChangeVisa}
           />
+
           {((total && Number(total || 0) >= 1500 && retention === 0) || fileRxhPreview) && (
-            <Controller
-              name="fileRxhPreview"
+            <FileUpload
               control={control}
-              render={({ field }) => (
-                <FileUpload
-                  label="Suspención de 4ta categoría"
-                  name="fileRxhPreview"
-                  value={fileRxhPreview}
-                  file={fileRxh}
-                  onFileChange={handleFileChangeRxh}
-                  errors={errors}
-                />
-              )}
+              label="Suspención de 4ta categoría"
+              name="fileRxhPreview"
+              value={fileRxhPreview}
+              file={fileRxh}
+              onFileChange={handleFileChangeRxh}
             />
           )}
         </div>

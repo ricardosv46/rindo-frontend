@@ -1,7 +1,3 @@
-export { ModalCreateGlobalApprover } from './global-approvers/modals/ModalCreateGlobalApprover'
-export { ModalDeleteGlobalApprover } from './global-approvers/modals/ModalDeleteGlobalApprover'
-export { ModalUpdateGlobalApprover } from './global-approvers/modals/ModalUpdateGlobalApprover'
-
 export { ModalAddApprover } from './approvers/modals/ModalAddApprover'
 export { ModalDeleteApprover } from './approvers/modals/ModalDeleteApprover'
 export { columnsApprover } from './approvers/table/columnsApprover'

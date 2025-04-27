@@ -147,7 +147,7 @@ const PageApprovers = () => {
     <Show condition={isLoadingUsers || isLoadingAreas || isLoadingCompanies} loadingComponent={<Spinner />}>
       <div className="flex flex-col gap-4 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">Usuarios</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Aprobadores</h2>
 
           <div className="flex items-center gap-2">
             <Button type="button" className="gap-1" onClick={openModalAdd}>

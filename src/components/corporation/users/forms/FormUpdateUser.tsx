@@ -3,7 +3,8 @@ import { FormMultiSelect } from '@components/shared/Forms/FormMultiSelect'
 import { Option } from '@components/shared/Forms/FormSelect'
 import { Button } from '@components/ui/button'
 import { Divider } from '@components/ui/divider'
-import { yupResolver } from '@hookform/resolvers/yup'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { IArea } from '@interfaces/area'
 import { ICompany } from '@interfaces/company'
 import { IUser } from '@interfaces/user'
@@ -14,47 +15,49 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import * as yup from 'yup'
 
-type Role = 'APPROVER' | 'SUBMITTER' | 'GLOBAL_APPROVER'
-export interface IFormUpdateUser {
-  email: string
-  name: string
-  lastname: string
-  role: Role
-  company?: string
-  areas?: string[]
-  document: string
-  phone: string
-}
-
-const validationSchema = yup.object().shape({
-  email: yup.string().email('Correo inválido').required('El correo es requerido'),
-  name: yup.string().required('El nombre es requerido'),
-  lastname: yup.string().required('El apellido es requerido'),
-  role: yup.string().oneOf(['APPROVER', 'SUBMITTER', 'GLOBAL_APPROVER'], 'El rol es requerido').required('El rol es requerido'),
-  company: yup.string().when('role', {
-    is: (role: string) => role !== 'GLOBAL_APPROVER',
-    then: (schema) => schema.required('La empresa es requerida'),
-    otherwise: (schema) => schema.notRequired()
+const validationSchema = z.object({
+  email: z.string().email('Correo inválido').min(1, 'El correo es requerido'),
+  name: z.string().min(1, 'El nombre es requerido'),
+  lastname: z.string().min(1, 'El apellido es requerido'),
+  role: z.enum(['APPROVER', 'SUBMITTER', 'GLOBAL_APPROVER'], {
+    errorMap: () => ({ message: 'El rol es requerido' })
   }),
-  areas: yup.array().when('role', {
-    is: (role: string | undefined) => role !== 'GLOBAL_APPROVER',
-    then: (schema) => schema.of(yup.string().required('El área es requerida')).min(1, 'Debe escoger al menos un área'),
-    otherwise: (schema) => schema.notRequired()
-  }),
-  document: yup
+  company: z
     .string()
-    .matches(/^\d+$/, 'El documento solo puede contener números ')
+    .optional()
+    .refine(
+      (val) => {
+        const role = z.string().parse(val)
+        return role !== 'GLOBAL_APPROVER' ? !!val : true
+      },
+      { message: 'La empresa es requerida' }
+    ),
+  areas: z
+    .array(z.string())
+    .optional()
+    .refine(
+      (val) => {
+        const role = z.string().parse(val)
+        return role !== 'GLOBAL_APPROVER' ? (val?.length ?? 0) > 0 : true
+      },
+      { message: 'Debe escoger al menos un área' }
+    ),
+  document: z
+    .string()
+    .regex(/^\d+$/, 'El documento solo puede contener números')
     .min(8, 'El documento debe tener 8 o 9 dígitos')
     .max(9, 'El documento debe tener 8 o 9 dígitos')
-    .required('El documento es requerido'),
-  phone: yup
+    .min(1, 'El documento es requerido'),
+  phone: z
     .string()
-    .matches(/^\d+$/, 'El número de teléfono solo puede contener números')
+    .regex(/^\d+$/, 'El número de teléfono solo puede contener números')
     .length(9, 'El número de teléfono debe tener exactamente 9 dígitos')
-    .required('El número de teléfono es requerido')
+    .min(1, 'El número de teléfono es requerido')
 })
+
+type IFormUpdateUser = z.infer<typeof validationSchema>
+
 interface FormUpdateUserProps {
   onClose: () => void
   companies: ICompany[]
@@ -78,12 +81,12 @@ export const FormUpdateUser = ({ onClose, companies, areas, data }: FormUpdateUs
     setValue,
     formState: { errors }
   } = useForm<IFormUpdateUser>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       email: data?.email,
       name: data?.name,
       lastname: data?.name,
-      role: data?.role as Role,
+      role: data?.role as 'APPROVER' | 'SUBMITTER' | 'GLOBAL_APPROVER',
       company: data?.company?._id,
       areas: data?.areas,
       document: data?.document,

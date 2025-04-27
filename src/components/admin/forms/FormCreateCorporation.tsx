@@ -1,33 +1,32 @@
-import { yupResolver } from '@hookform/resolvers/yup'
-import { Button, Divider, TextField } from '@mui/material'
+import { FormInput } from '@components/shared'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { createCorporation } from '@services/user'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import * as yup from 'yup'
+import { Divider } from '@components/ui/divider'
+import { Button } from '@components/ui/button'
 
-export interface IFormCreateCorporation {
-  name: string
-  email: string
-  password: string
-}
-
-const validationSchema = yup.object().shape({
-  name: yup.string().required('El nombre es requerido'),
-  email: yup.string().email('Correo invalido').required('El correo es requerido'),
-  password: yup.string().min(6, 'La contraseña debe tener al menos 6 caracteres').required('La contraseña es requerida')
+const validationSchema = z.object({
+  name: z.string().min(1, 'El nombre es requerido'),
+  email: z.string().email('Correo invalido').min(1, 'El correo es requerido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').min(1, 'La contraseña es requerida')
 })
+
+type IFormCreateCorporation = z.infer<typeof validationSchema>
 
 interface FormCreateCorporationProps {
   onClose: () => void
 }
+
 export const FormCreateCorporation = ({ onClose }: FormCreateCorporationProps) => {
   const {
     handleSubmit,
     control,
     formState: { errors }
   } = useForm<IFormCreateCorporation>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -38,6 +37,7 @@ export const FormCreateCorporation = ({ onClose }: FormCreateCorporationProps) =
   const onSubmit = async (values: IFormCreateCorporation) => {
     mutateCreate(values)
   }
+
   const queryClient = useQueryClient()
   const { mutate: mutateCreate, isPending } = useMutation({
     mutationFn: createCorporation,
@@ -53,53 +53,12 @@ export const FormCreateCorporation = ({ onClose }: FormCreateCorporationProps) =
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 max-h-[calc(100vh-150px)] py-2 overflow-auto">
-      <Controller
-        name="name"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Nombre"
-            size="small"
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-        )}
-      />
-      <Controller
-        name="email"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="text"
-            label="Correo"
-            size="small"
-            error={!!errors.email}
-            helperText={errors.email?.message}
-          />
-        )}
-      />
-      <Controller
-        name="password"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            color="primary"
-            type="password"
-            label="Contraseña"
-            size="small"
-            error={!!errors.password}
-            helperText={errors.password?.message}
-          />
-        )}
-      />
+      <FormInput control={control} name="name" label="Nombre" />
+      <FormInput control={control} name="email" label="Correo" />
+      <FormInput control={control} name="password" label="Contraseña" type="password" />
+
       <Divider />
-      <Button type="submit" variant="contained" disabled={isPending}>
+      <Button type="submit" disabled={isPending}>
         Crear
       </Button>
     </form>

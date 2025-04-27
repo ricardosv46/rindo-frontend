@@ -3,58 +3,60 @@ import { FormMultiSelect } from '@components/shared/Forms/FormMultiSelect'
 import { Option } from '@components/shared/Forms/FormSelect'
 import { Button } from '@components/ui/button'
 import { Divider } from '@components/ui/divider'
-import { yupResolver } from '@hookform/resolvers/yup'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { IArea } from '@interfaces/area'
 import { ICompany } from '@interfaces/company'
 import { onlyNumbers } from '@lib/utils'
-
 import { createGlobalApprover, createUser } from '@services/user'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import * as yup from 'yup'
 
-export interface IFormCreateUser {
-  email: string
-  name: string
-  lastname: string
-  role: 'APPROVER' | 'SUBMITTER' | 'GLOBAL_APPROVER'
-  company?: string
-  areas?: string[]
-  password: string
-  document: string
-  phone: string
-}
-
-const validationSchema = yup.object().shape({
-  email: yup.string().email('Correo inválido').required('El correo es requerido'),
-  name: yup.string().required('El nombre es requerido'),
-  lastname: yup.string().required('El apellido es requerido'),
-  role: yup.string().oneOf(['APPROVER', 'SUBMITTER', 'GLOBAL_APPROVER'], 'El rol es requerido').required('El rol es requerido'),
-  company: yup.string().when('role', {
-    is: (role: string) => role !== 'GLOBAL_APPROVER',
-    then: (schema) => schema.required('La empresa es requerida'),
-    otherwise: (schema) => schema.notRequired()
+const validationSchema = z.object({
+  email: z.string().email('Correo inválido').min(1, 'El correo es requerido'),
+  name: z.string().min(1, 'El nombre es requerido'),
+  lastname: z.string().min(1, 'El apellido es requerido'),
+  role: z.enum(['APPROVER', 'SUBMITTER', 'GLOBAL_APPROVER'], {
+    errorMap: () => ({ message: 'El rol es requerido' })
   }),
-  areas: yup.array().when('role', {
-    is: (role: string | undefined) => role !== 'GLOBAL_APPROVER',
-    then: (schema) => schema.of(yup.string().required('El área es requerida')).min(1, 'Debe escoger al menos un área'),
-    otherwise: (schema) => schema.notRequired()
-  }),
-  password: yup.string().min(6, 'La contraseña debe tener al menos 6 caracteres').required('La contraseña es requerida'),
-  document: yup
+  company: z
     .string()
-    .matches(/^\d+$/, 'El documento solo puede contener números ')
+    .optional()
+    .refine(
+      (val) => {
+        const role = z.string().parse(val)
+        return role !== 'GLOBAL_APPROVER' ? !!val : true
+      },
+      { message: 'La empresa es requerida' }
+    ),
+  areas: z
+    .array(z.string())
+    .optional()
+    .refine(
+      (val) => {
+        const role = z.string().parse(val)
+        return role !== 'GLOBAL_APPROVER' ? (val?.length ?? 0) > 0 : true
+      },
+      { message: 'Debe escoger al menos un área' }
+    ),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').min(1, 'La contraseña es requerida'),
+  document: z
+    .string()
+    .regex(/^\d+$/, 'El documento solo puede contener números')
     .min(8, 'El documento debe tener 8 o 9 dígitos')
     .max(9, 'El documento debe tener 8 o 9 dígitos')
-    .required('El documento es requerido'),
-  phone: yup
+    .min(1, 'El documento es requerido'),
+  phone: z
     .string()
-    .matches(/^\d+$/, 'El número de teléfono solo puede contener números')
+    .regex(/^\d+$/, 'El número de teléfono solo puede contener números')
     .length(9, 'El número de teléfono debe tener exactamente 9 dígitos')
-    .required('El número de teléfono es requerido')
+    .min(1, 'El número de teléfono es requerido')
 })
+
+type IFormCreateUser = z.infer<typeof validationSchema>
+
 interface FormCreateUserProps {
   onClose: () => void
   companies: ICompany[]
@@ -77,7 +79,7 @@ export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProp
     setValue,
     formState: { errors }
   } = useForm<IFormCreateUser>({
-    resolver: yupResolver(validationSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       email: '',
       name: '',
@@ -90,8 +92,6 @@ export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProp
       phone: ''
     }
   })
-
-  console.log(watch())
 
   const queryClient = useQueryClient()
   const { mutate: mutateCreate, isPending: isPendingUser } = useMutation({
@@ -155,6 +155,7 @@ export const FormCreateUser = ({ onClose, companies, areas }: FormCreateUserProp
       return [{ label: 'No existen areas en esa empresa', value: '-' }]
     }
   }, [filteredAreas])
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}

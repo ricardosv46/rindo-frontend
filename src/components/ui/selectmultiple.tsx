@@ -9,22 +9,18 @@ interface SelectMultipleProps extends Omit<React.ComponentPropsWithoutRef<typeof
   ref?: React.Ref<HTMLButtonElement>
 }
 
-const SelectMultiple = React.forwardRef<React.ElementRef<typeof SelectPrimitive.Root>, SelectMultipleProps>(
-  ({ value = [], onValueChange, ...props }, ref) => {
-    return (
-      <SelectPrimitive.Root
-        {...props}
-        onValueChange={(newValue) => {
-          const currentValues = Array.isArray(value) ? value : []
-          const updatedValues = currentValues.includes(newValue)
-            ? currentValues.filter((v) => v !== newValue)
-            : [...currentValues, newValue]
-          onValueChange?.(updatedValues)
-        }}
-      />
-    )
-  }
-)
+const SelectMultiple = React.forwardRef<HTMLButtonElement, SelectMultipleProps>(({ value = [], onValueChange, ...props }, ref) => {
+  return (
+    <SelectPrimitive.Root
+      {...props}
+      onValueChange={(newValue) => {
+        const currentValues = Array.isArray(value) ? value : []
+        const updatedValues = currentValues.includes(newValue) ? currentValues.filter((v) => v !== newValue) : [...currentValues, newValue]
+        onValueChange?.(updatedValues)
+      }}
+    />
+  )
+})
 SelectMultiple.displayName = 'SelectMultiple'
 
 const SelectGroup = SelectPrimitive.Group
